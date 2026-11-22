@@ -1,3 +1,14 @@
+/* 布局不再限制在 1440px 居中，左右导航贴屏幕边缘 */
+:root {
+  --vp-layout-max-width: 100%;
+}
+
+/* 正文放宽到 1100px 上限：表格/代码够宽，超宽屏下文字行不至于过长。
+   主题同名规则带 scoped 属性选择器，需借 #app 提级才能盖过 */
+#app .VPDoc.has-aside .content-container {
+  max-width: 1100px;
+}
+
 /**
  * 参数表排版修正
  *
