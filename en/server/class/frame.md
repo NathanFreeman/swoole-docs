@@ -63,7 +63,7 @@ public static function pack(\Swoole\WebSocket\Frame|string $data, int $opcode = 
 |:---|:---|:---|
 | `$data` | Message content | Required |
 | `$opcode` | Specifies the format of the data content being sent; text by default. When sending binary content, the `$opcode` parameter must be set to `SWOOLE_WEBSOCKET_OPCODE_BINARY` (other value: `SWOOLE_WEBSOCKET_OPCODE_BINARY`) | `SWOOLE_WEBSOCKET_OPCODE_TEXT` |
-| `$flags` | The attributes of the frame | None |
+| `$flags` | The attributes of the frame | `SWOOLE_WEBSOCKET_FLAG_FIN` |
 
 **Return value**: Returns the packed `WebSocket` packet.
 
@@ -81,7 +81,7 @@ $server->on('message', function(Server $server, Frame $frame) {
     $data->opcode = SWOOLE_WEBSOCKET_OPCODE_TEXT;
     $data->flags = SWOOLE_WEBSOCKET_FLAG_FIN;
     $data->finish = true;
-    $server->send(Frame::pack($data));
+    $server->send($frame->fd, Frame::pack($data));
 });
 $server->start();
 ```
@@ -98,7 +98,7 @@ public static function unpack(string $data): \Swoole\WebSocket\Frame
 |:---|:---|:---|
 | `$data` | The data to unpack | Required |
 
-**Return value**: Returns the packed `Swoole\WebSocket\Frame` object.
+**Return value**: Returns the unpacked `Swoole\WebSocket\Frame` object.
 
 **Example**
 
@@ -111,7 +111,7 @@ $server = new Server('127.0.0.1', 9501);
 $server->on('receive', function(Server $server, int $fd, int $reactorId, string $data) {
     $frame = Frame::unpack($data);
     var_dump($frame instanceof Frame);
-    $server->send($data);
+    $server->send($fd, $data);
 });
 $server->start();
 ```

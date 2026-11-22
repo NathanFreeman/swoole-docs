@@ -381,7 +381,7 @@ public function sendMessage(string $data, int $dst_worker_id): bool
 | 参数 | 说明 | 默认值 |
 |:---|:---|:---|
 | `$data` | 发送的数据 | 必填 |
-| `$dst_worker_id` | 目标进程 `id` | `0` |
+| `$dst_worker_id` | 目标进程 `id` | 必填 |
 
 **返回值**：成功返回 `true`，失败返回 `false`。
 
@@ -398,7 +398,7 @@ use Swoole\Process;
 
 $pool = new Process\Pool(2, SWOOLE_IPC_UNIXSOCK);
 $pool->set([
-    'enable_coroutine' => true,
+    'enable_coroutine' => false,
     // 'enable_message_bus' => true, // 开启后输出 int(6000)
     'enable_message_bus' => false,   // 关闭后输出 int(2048)
     'max_package_size' => 2 * 1024,
@@ -456,7 +456,7 @@ $pool->on("WorkerStart", function ($pool, $workerId) {
     $redis->pconnect('127.0.0.1', 6379);
     $key = "key1";
     while ($running) {
-        $msg = $redis->brpop($key);
+        $msg = $redis->brpop($key, 2);
         pcntl_signal_dispatch();
         if ($msg == null) continue;
         var_dump($msg);
@@ -561,7 +561,7 @@ $pool->start();
 获取工作进程对象，返回 [Swoole\Process](/zh/process/process.html)。
 
 ```php
-public function getProcess(int $worker_id): Swoole\Process
+public function getProcess(int $worker_id = -1): Swoole\Process
 ```
 
 | 参数 | 说明 | 默认值 |

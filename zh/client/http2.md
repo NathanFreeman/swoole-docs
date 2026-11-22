@@ -41,7 +41,7 @@ public int $type = 0;
 通过 [set](/zh/client/http2.html#set) 方法设置的客户端配置选项只读数组。未设置任何配置时为 `null`。
 
 ```php
-public array $setting = null;
+public ?array $setting = null;
 ```
 
 ### socket

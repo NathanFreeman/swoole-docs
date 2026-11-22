@@ -113,7 +113,7 @@ $http->start();
 打开另一个终端，使用 `curl` 发送 HTTP2 请求：
 
 ```bash
-curl -k https://127.0.0.1/
+curl -k "https://127.0.0.1/?name=Swoole"
 ```
 
 我们会看到终端会输出：

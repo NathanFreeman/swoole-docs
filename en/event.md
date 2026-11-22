@@ -9,7 +9,7 @@
 Adds a `socket` to the underlying event polling.
 
 ```php
-public static function add(mixed $socket, ?callable $readCallback = null, ?callable $writeCallback = null, int $events = SWOOLE_EVENT_READ): int|false
+public static function add(mixed $socket, ?callable $readCallback = null, ?callable $writeCallback = null, int $events = SWOOLE_EVENT_READ): bool
 ```
 
 | Parameter | Description | Default |
@@ -19,7 +19,7 @@ public static function add(mixed $socket, ?callable $readCallback = null, ?calla
 | `$writeCallback` | Writable event callback function, triggered when this `$socket` becomes writable | `null` |
 | `$events` | Mask of event types. `SWOOLE_EVENT_READ` listens for readable events, `SWOOLE_EVENT_WRITE` listens for writable events, `SWOOLE_EVENT_READ \| SWOOLE_EVENT_WRITE` listens for both readable and writable events | `SWOOLE_EVENT_READ` |
 
-**Return value**: Returns the file descriptor in `$socket` on success, `false` on failure; use `swoole_last_error()` to get the error code.
+**Return value**: Returns `true` on success, `false` on failure; use `swoole_last_error()` to get the error code.
 
 **Example**
 
@@ -185,7 +185,7 @@ use Swoole\Event;
 $fp = stream_socket_client('tcp://127.0.0.1:9501');
 
 Event::add($fp, function($fp) {
-     echo fread($fp);
+     echo fread($fp, 8192);
 });
 
 $data = str_repeat('A', 1024 * 1024 * 2);

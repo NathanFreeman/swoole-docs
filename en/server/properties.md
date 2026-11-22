@@ -141,10 +141,15 @@ $server->on('receive', function(Server $server, int $fd, int $reactorId, string 
 });
 
 $server->start();
+```
+
+```php
+<?php
+use Swoole\Server;
 
 // Example 2: UDP service
 $server = new Server('127.0.0.1', 9501, SWOOLE_BASE, SWOOLE_UDP);
-$server->on('receive', function(Server $server, int $fd, int $reactorId, string $data) {
+$server->on('packet', function(Server $server, string $data, array $clientInfo) {
   echo "Server type: " . $server->type . PHP_EOL;
 });
 
@@ -239,7 +244,7 @@ $server->start();
 ```
 
 > [!TIP]
-> This property returns one of the following values: [`SWOOLE_BASE`](/en/server/process_thread.html#swoole-base) — single-process mode, [`SWOOLE_PROCESS`](/en/server/process_thread.html#swoole-process) — multi-process mode, [`SWOOLE_THREAD`](/en/server/process_thread.html#swoole-thread) — multi-thread mode.
+> This property returns one of the following values: [`SWOOLE_BASE`](/en/server/process_thread.html#swoole-base) — multi-process mode (no master process), [`SWOOLE_PROCESS`](/en/server/process_thread.html#swoole-process) — multi-process mode, [`SWOOLE_THREAD`](/en/server/process_thread.html#swoole-thread) — multi-thread mode.
 
 ### master_pid
 

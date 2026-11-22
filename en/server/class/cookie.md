@@ -198,7 +198,7 @@ use Swoole\Http\Request;
 use Swoole\Http\Response;
 use Swoole\Http\Cookie;
 
-$server = new Server('127.0.0.1', SWOOLE_BASE);
+$server = new Server('127.0.0.1', 9501, SWOOLE_BASE);
 $server->on('request', function(Request $request, Response $response) {
     $cookie = new Cookie();
     $cookie->withName('key1')

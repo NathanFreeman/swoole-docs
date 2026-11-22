@@ -9,7 +9,7 @@
 将一个 `socket` 加入到底层的事件轮询中。
 
 ```php
-public static function add(mixed $socket, ?callable $readCallback = null, ?callable $writeCallback = null, int $events = SWOOLE_EVENT_READ): int|false
+public static function add(mixed $socket, ?callable $readCallback = null, ?callable $writeCallback = null, int $events = SWOOLE_EVENT_READ): bool
 ```
 
 | 参数 | 说明 | 默认值 |
@@ -19,7 +19,7 @@ public static function add(mixed $socket, ?callable $readCallback = null, ?calla
 | `$writeCallback` | 可写事件回调函数，当此 `$socket` 可写时触发该函数 | `null` |
 | `$events` | 事件类型的掩码，`SWOOLE_EVENT_READ` 监听可读事件，`SWOOLE_EVENT_WRITE` 监听可写事件，`SWOOLE_EVENT_READ \| SWOOLE_EVENT_WRITE` 同时监听可读可写事件 | `SWOOLE_EVENT_READ` |
 
-**返回值**：返回 `$socket` 中的文件描述符表示成功，返回 `false` 表示失败，请使用 `swoole_last_error()` 获取错误码。
+**返回值**：返回 `true` 表示成功，返回 `false` 表示失败，请使用 `swoole_last_error()` 获取错误码。
 
 **示例**
 
@@ -185,7 +185,7 @@ use Swoole\Event;
 $fp = stream_socket_client('tcp://127.0.0.1:9501');
 
 Event::add($fp, function($fp) {
-     echo fread($fp);
+     echo fread($fp, 8192);
 });
 
 $data = str_repeat('A', 1024 * 1024 * 2);

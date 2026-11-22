@@ -227,7 +227,7 @@ run(function () {
 Hooks the sleep functions `sleep`, `usleep`, `time_nanosleep`, and `time_sleep_until`.
 
 > [!NOTE]
-> Because the underlying timer has a minimum granularity of `1ms`, when using high-precision sleep functions such as `usleep` with a duration below `1ms`, the `sleep system call` is used directly. This may cause a very brief sleep-induced block.
+> Because the underlying timer has a minimum granularity of `1ms`, when using high-precision sleep functions such as `usleep` with a duration below `1ms`, the `usleep system call` is used directly. This may cause a very brief sleep-induced block.
 
 **Example**
 
@@ -353,7 +353,7 @@ run(function () {
         fwrite($pipes[0], 'I am process');
         fclose($pipes[0]);
 
-        while (true) {
+        while (!feof($pipes[1])) {
             echo fread($pipes[1], 1024);
         }
 

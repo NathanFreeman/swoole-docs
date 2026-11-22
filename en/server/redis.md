@@ -56,7 +56,7 @@ $server->setHandler('sAdd', function ($fd, $data) use ($server) {
 
     $key = $data[0];
     if (!isset($server->data[$key])) {
-        $array[$key] = array();
+        $server->data[$key] = array();
     }
 
     $count = 0;
@@ -89,7 +89,7 @@ $server->setHandler('hSet', function ($fd, $data) use ($server) {
 
     $key = $data[0];
     if (!isset($server->data[$key])) {
-        $array[$key] = array();
+        $server->data[$key] = array();
     }
     $field = $data[1];
     $value = $data[2];

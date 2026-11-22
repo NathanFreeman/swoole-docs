@@ -12,10 +12,10 @@
 
 ### opcode
 
-操作码，对于关闭帧，其值固定为 `SWOOLE_WEBSOCKET_CLOSE_NORMAL`
+操作码，对于关闭帧，其值固定为 `SWOOLE_WEBSOCKET_OPCODE_CLOSE`
 
 ```php
-public int $opcode = SWOOLE_WEBSOCKET_CLOSE_NORMAL
+public int $opcode = SWOOLE_WEBSOCKET_OPCODE_CLOSE
 ```
 
 ### code
@@ -69,4 +69,6 @@ $server->on('message', function(Server $server, Frame $frame) {
     $server->push($frame->fd, $closeFrame);
     $server->close($frame->fd);
 });
+
+$server->start();
 ```

@@ -124,5 +124,5 @@ curl http://127.0.0.1:9501/
 我们会看到终端会输出：
 
 ```
-<h1>Hello Swoole</h1>
+<h1>Hello World</h1>
 ```

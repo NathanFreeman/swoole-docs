@@ -270,7 +270,7 @@ $server->start();
 ```
 
 > [!WARNING]
-> 启动成功后将进入事件循环，等待客户端连接请求。`start` 方法之后的代码在服务器停止不会执行。
+> 启动成功后将进入事件循环，等待客户端连接请求。`start` 方法之后的代码在服务器停止前不会执行。
 
 ## stop
 
@@ -425,9 +425,9 @@ $server->start();
 | worker_response_count | 当前 worker 进程响应次数                                                                                                                                                                              |
 | worker_dispatch_count | master 进程向当前 worker 进程投递任务的计数，在 [master进程](/zh/server/process_thread.html#进程-线程) 进行 dispatch 时增加计数                                                                                                 |
 | task_idle_worker_num  | 空闲的 task 进程数                                                                                                                                                                                  |
-| tasking_num           | 正在工作的 task 进程数                                                                                                                                                                                |
+| tasking_num           | 当前正在处理的任务数量                                                                                                                                                                                |
 | coroutine_num         | 当前协程数量                                                                                                                                                                                      |
-| coroutine_peek_num    | 全部协程数量                                                                                                                                                                                      |
+| coroutine_peak_num    | 协程数量的历史峰值                                                                                                                                                                                      |
 | task_queue_num        | 消息队列中的任务数量                                                                                                                                                                                  |
 | task_queue_bytes      | 消息队列的内存占用字节数                                                                                                                                                                                |
 
@@ -835,11 +835,10 @@ public function taskCo(array $tasks, float $timeout = 0.5): array|false
 
 ```php
 <?php
-use Swoole\Server;
-use Swoole\Http\HttpServer;
+use Swoole\Http\Server;
 use Swoole\Http\Request;
 use Swoole\Http\Response;
-$server = new HttpServer("127.0.0.1", 9502, SWOOLE_BASE);
+$server = new Server("127.0.0.1", 9502, SWOOLE_BASE);
 
 $server->set([
     'worker_num'      => 1,
@@ -1107,7 +1106,7 @@ public function getClientInfo(int $fd, int $reactor_id = -1, bool $ignoreError =
 public function getWorkerId(): int|false
 ```
 
-**返回值**：进程不存在返回 `false`，否则返回进程的 `PID`。
+**返回值**：进程不存在返回 `false`，否则返回进程的编号。
 
 ## getWorkerPid
 
@@ -1412,7 +1411,8 @@ public function isEstablished(int $fd): bool
 
 ```php
 <?php
-use Swoole\Websocket\Server;
+use Swoole\WebSocket\Server;
+use Swoole\WebSocket\Frame;
 $server = new Server('127.0.0.1', 9502);
 $server->on('message', function(Server $server, Frame $frame) {
     var_dump($server->isEstablished($frame->fd));
@@ -1440,8 +1440,10 @@ public static function pack(Swoole\WebSocket\Frame|string $data, int $opcode = S
 |:---|:---|:---|
 | `$data` | 消息内容 | 必填 |
 | `$opcode` | 指定发送数据内容的格式，默认为文本。发送二进制内容 `$opcode` 参数需要设置为 `SWOOLE_WEBSOCKET_OPCODE_BINARY`。其它值：`SWOOLE_WEBSOCKET_OPCODE_BINARY` | `SWOOLE_WEBSOCKET_OPCODE_TEXT` |
-| `bool $finish` | 帧是否完成。自 `v4.4.12` 版本起，`finish` 参数（`bool` 型）改为 `flags` 参数（`int` 型）以支持 `WebSocket` 压缩，`finish` 对应 `SWOOLE_WEBSOCKET_FLAG_FIN` 值为 `1`，原有 `bool` 型值会隐式转换为 `int` 型，此改动向下兼容无影响 | 必填 |
-| `bool $mask` | 是否设置掩码，`v4.4.12` 已移除此参数 | 必填 |
+| `$flags` | 帧标志位，`SWOOLE_WEBSOCKET_FLAG_FIN` 表示帧已完成，值为 `1` | `SWOOLE_WEBSOCKET_FLAG_FIN` |
+
+> [!NOTE]
+> 自 `v4.4.12` 版本起，`finish` 参数（`bool` 型）改为 `flags` 参数（`int` 型）以支持 `WebSocket` 压缩，原有 `bool` 型值会隐式转换为 `int` 型，此改动向下兼容无影响；`mask` 参数已在 `v4.4.12` 版本移除。
 
 **返回值**：操作成功返回打包好的 `WebSocket` 数据包，操作失败返回空字符串。
 
@@ -1622,12 +1624,12 @@ function(int $fd, array $data)
 use Swoole\Redis\Server;
 $server = new Server("127.0.0.1", 9501, SWOOLE_BASE);
 $server->set(['worker_num' => 1]);
-$server->setHandler('get', function(int $fd, string $data) use ($server) {
-    if (!$data[0]) {
+$server->setHandler('get', function(int $fd, array $data) use ($server) {
+    if (count($data) == 0) {
         // 通过return返回的字符串数据，底层会将它发送给redis客户端
         return Server::format(Server::ERROR, "ERR wrong number of arguments for 'GET' command");
     }
-    // 通过redis客户端发送get命令时，服务端会返回hello world
+    // 通过redis客户端发送get命令时，服务端会返回hello
     $server->send($fd, Server::format(Server::STRING, "hello"));
 });
 $server->start();
@@ -1678,11 +1680,11 @@ public static function format(int $type, mixed $value = null): false|string
 use Swoole\Redis\Server;
 $server = new Server("127.0.0.1", 9501, SWOOLE_BASE);
 $server->set(['worker_num' => 1]);
-$server->setHandler('get', function(int $fd, string $data) use ($server) {
-    if (!$data[0]) {
+$server->setHandler('get', function(int $fd, array $data) use ($server) {
+    if (count($data) == 0) {
         return Server::format(Server::ERROR, "ERR wrong number of arguments for 'GET' command");
     }
-    // 通过redis客户端发送get命令时，服务端会返回hello world
+    // 通过redis客户端发送get命令时，服务端会返回hello
     $server->send($fd, Server::format(Server::STRING, "hello"));
 });
 $server->start();

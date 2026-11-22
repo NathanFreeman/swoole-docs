@@ -235,7 +235,7 @@ public static function writeFile(string $filename, string $fileContent, int $fla
 > [!NOTE]
 > `$flags` also supports `LOCK_EX`, which places an exclusive lock on the file during writing to prevent other coroutines from reading or writing it. Multiple options can be combined with bitwise OR `|`, such as `FILE_APPEND | LOCK_EX`.
 
-**Return value**: Returns `true` on success and `false` on failure.
+**Return value**: Returns the number of bytes written on success, `false` on failure.
 
 **Example**
 
@@ -344,10 +344,10 @@ public static function waitSignal(int|array $signo, float $timeout = -1): int|fa
 
 | Parameter | Description | Default |
 |:---|:---|:---|
-| `$signo` | Signal type; you can use the `SIG` family of constants, such as `SIGTERM`, `SIGKILL`, etc. | Required |
+| `$signo` | Signal type; you can use the `SIG` family of constants, such as `SIGTERM`, `SIGUSR1`, etc. | Required |
 | `$timeout` | Timeout. A negative value means never time out. In seconds, with a minimum granularity of milliseconds (`0.001` seconds) | `-1` |
 
-**Return value**: Returns `true` when a signal is received; returns `false` if no signal is received before the timeout.
+**Return value**: Returns the signal number when a signal is received; returns `false` if no signal is received before the timeout.
 
 **Example**
 
@@ -371,7 +371,7 @@ Process::kill($process->pid, SIGUSR1);
 
 ### waitEvent
 
-Coroutine version of a signal listener that blocks the current coroutine until readable or writable events are triggered. Similar to [Swoole\Event::add()](/en/event.html#add).
+Coroutine version of an IO event listener that blocks the current coroutine until readable or writable events are triggered. Similar to [Swoole\Event::add()](/en/event.html#add).
 
 ```php
 public static function waitEvent(mixed $socket, int $events = SWOOLE_EVENT_READ, float $timeout = -1): int|false
@@ -392,15 +392,15 @@ public static function waitEvent(mixed $socket, int $events = SWOOLE_EVENT_READ,
 
 ```php
 <?php
-use Swoole\Coroutine;
+use Swoole\Coroutine\System;
 use function Swoole\Coroutine\run;
 
 run(function () {
     $client = stream_socket_client('tcp://www.qq.com:80', $errno, $errstr, 30);
-    $events = Coroutine::waitEvent($client, SWOOLE_EVENT_READ | SWOOLE_EVENT_WRITE);
+    $events = System::waitEvent($client, SWOOLE_EVENT_READ | SWOOLE_EVENT_WRITE);
     assert($events === SWOOLE_EVENT_WRITE);
     fwrite($client, "GET / HTTP/1.1\r\nHost: www.qq.com\r\n\r\n");
-    $events = Coroutine::waitEvent($client, SWOOLE_EVENT_READ);
+    $events = System::waitEvent($client, SWOOLE_EVENT_READ);
     assert($events === SWOOLE_EVENT_READ);
     $response = fread($client, 8192);
     echo $response;

@@ -183,7 +183,7 @@ Swoole\Atomic->wait(float $timeout = 1.0): bool
 > `Swoole\Atomic\Long`和`Swoole\Thread\Atomic\Long`没有`wait`方法。
 
 > [!DANGER]
-> `Swoole\Atomic->wakeup()`会阻塞整个进程而不是协程，因此请勿在协程环境中使用`Swoole\Atomic->wakeup()`避免引起进程挂起。
+> `Swoole\Atomic->wait()`会阻塞整个进程而不是协程，因此请勿在协程环境中使用`Swoole\Atomic->wait()`避免引起进程挂起。
 
 ## wakeup
 - 唤醒处于休眠状态的其他进程，该方法和[`Swoole\Atomic->wait()`](#wait)配套使用，常用于多进程同步。
@@ -195,7 +195,7 @@ Swoole\Atomic->wakeup(int $count = 1): bool
 * **参数**
     * **`int $count`**
         * **功能**：唤醒的进程数量
-        * **默认值**：无
+        * **默认值**：`1`
         * **其它值**：无
 * **返回值**
     * 成功返回`true`，失败返回`false`。

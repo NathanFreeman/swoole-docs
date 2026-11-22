@@ -63,7 +63,7 @@ public static function pack(\Swoole\WebSocket\Frame|string $data, int $opcode = 
 |:---|:---|:---|
 | `$data` | 消息内容 | 必填 |
 | `$opcode` | 指定发送数据内容的格式，默认为文本。发送二进制内容时 `$opcode` 参数需要设置为 `SWOOLE_WEBSOCKET_OPCODE_BINARY`（其它值：`SWOOLE_WEBSOCKET_OPCODE_BINARY`） | `SWOOLE_WEBSOCKET_OPCODE_TEXT` |
-| `$flags` | 帧的属性 | 无 |
+| `$flags` | 帧的属性 | `SWOOLE_WEBSOCKET_FLAG_FIN` |
 
 **返回值**：返回打包好的 `WebSocket` 数据包。
 
@@ -81,14 +81,14 @@ $server->on('message', function(Server $server, Frame $frame) {
     $data->opcode = SWOOLE_WEBSOCKET_OPCODE_TEXT;
     $data->flags = SWOOLE_WEBSOCKET_FLAG_FIN;
     $data->finish = true;
-    $server->send(Frame::pack($data));
+    $server->send($frame->fd, Frame::pack($data));
 });
 $server->start();
 ```
 
 ### unpack
 
-将 `WebSocket` 数据包解压成 `Swoole\WebSocket\Frame` 对象。
+将 `WebSocket` 数据包解包成 `Swoole\WebSocket\Frame` 对象。
 
 ```php
 public static function unpack(string $data): \Swoole\WebSocket\Frame
@@ -96,9 +96,9 @@ public static function unpack(string $data): \Swoole\WebSocket\Frame
 
 | 参数 | 说明 | 默认值 |
 |:---|:---|:---|
-| `$data` | 需要解压的数据 | 必填 |
+| `$data` | 需要解包的数据 | 必填 |
 
-**返回值**：返回打包好的 `Swoole\WebSocket\Frame` 对象。
+**返回值**：返回解包好的 `Swoole\WebSocket\Frame` 对象。
 
 **示例**
 
@@ -111,7 +111,7 @@ $server = new Server('127.0.0.1', 9501);
 $server->on('receive', function(Server $server, int $fd, int $reactorId, string $data) {
     $frame = Frame::unpack($data);
     var_dump($frame instanceof Frame);
-    $server->send($data);
+    $server->send($fd, $data);
 });
 $server->start();
 ```

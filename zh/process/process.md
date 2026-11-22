@@ -47,7 +47,7 @@ public int $msgQueueId
 消息队列的 `key`。
 
 ```php
-public string $msgQueueKey
+public ?int $msgQueueKey
 ```
 
 ## 方法
@@ -57,14 +57,14 @@ public string $msgQueueKey
 构造方法，仅创建对象并保存子进程回调，不会 `fork` 进程；调用 [start](#start) 后才真正创建子进程。
 
 ```php
-public function __construct(callable $function, bool $redirect_stdin_stdout = false, int $pipe_type = Swoole\Process::PIPE_TYPE_STREAM, bool $enable_coroutine = false)
+public function __construct(callable $function, bool $redirect_stdin_stdout = false, int $pipe_type = Swoole\Process::PIPE_TYPE_DGRAM, bool $enable_coroutine = false)
 ```
 
 | 参数 | 说明                                                                                                                                            | 默认值 |
 |:---|:----------------------------------------------------------------------------------------------------------------------------------------------|:---|
 | `$function` | 子进程启动后执行的回调函数。底层将其存入对象的 `callback` 属性，该属性为 `private`，外部不可访问                                                                                   | 必填 |
 | `$redirect_stdin_stdout` | 重定向子进程的标准输入输出。启用后子进程的输出写入主进程管道而非屏幕，键盘输入改为从管道读取，默认阻塞读取。参见 [exec](#exec)                                                                        | `false` |
-| `$pipe_type` | `unixSocket` 类型。启用 `$redirect_stdin_stdout` 时忽略此参数，强制为 `Swoole\Process::PIPE_TYPE_STREAM`。<br>子进程内无进程间通信时可设为 `Swoole\Process::PIPE_TYPE_NONE` | `Swoole\Process::PIPE_TYPE_STREAM` |
+| `$pipe_type` | `unixSocket` 类型。启用 `$redirect_stdin_stdout` 时忽略此参数，强制为 `Swoole\Process::PIPE_TYPE_STREAM`。<br>子进程内无进程间通信时可设为 `Swoole\Process::PIPE_TYPE_NONE` | `Swoole\Process::PIPE_TYPE_DGRAM` |
 | `$enable_coroutine` | 在 `$function` 中启用协程，启用后可直接使用协程 `API`                                                                                                          | `false` |
 
 **`$pipe_type` 取值**
@@ -665,7 +665,7 @@ Process::wait(true);
 关闭已创建的 `unixSocket`管道通信。
 
 ```php
-public function close(int $which): bool
+public function close(int $which = 0): bool
 ```
 | 参数 | 说明                                                                                                                    | 默认值 |
 |:---|:----------------------------------------------------------------------------------------------------------------------|:---|
@@ -707,7 +707,7 @@ public function useQueue(int $key = 0, int $mode = SWOOLE_MSGQUEUE_BALANCE, int 
 |:---|:---|:---|
 | `$key` | 消息队列的 `key`。传入 `<= 0` 的值时，底层使用 `ftok`，以当前执行文件的文件名生成 `key` | `0` |
 | `$mode` | 通信模式。<br>`SWOOLE_MSGQUEUE_BALANCE`：`pop()` 取队列首条消息，`push()` 不附加类型。所有进程平等竞争，谁先 `pop()` 谁取走队首消息，属于竞争消费/负载均衡，适合多进程共同处理同一批任务；<br>`SWOOLE_MSGQUEUE_ORIENT`：`push()` 附加 `进程 id + 1` 作为类型，`pop()` 只取该类型的消息。消息被精确投递给指定进程，属于定向投递，适合点对点通信 | `SWOOLE_MSGQUEUE_BALANCE` |
-| `$capacity` | 队列可存储的消息数量上限 | `-1` |
+| `$capacity` | 队列可存储的数据总字节数上限（对应系统的 `msg_qbytes`） | `-1` |
 
 > [!WARNING]
 > 队列为空时 `pop()` 阻塞，队列已满时 `push()` 阻塞。需要非阻塞时，`$mode` 必须为 `SWOOLE_MSGQUEUE_BALANCE | Swoole\Process::IPC_NOWAIT` 或 `SWOOLE_MSGQUEUE_ORIENT | Swoole\Process::IPC_NOWAIT`。
@@ -972,7 +972,7 @@ run(function () {
 设置 `CPU` 亲和性，将进程绑定到指定 `CPU` 核，让出其余核给更重要的程序。
 
 ```php
-public function setAffinity(array $cpus): bool
+public static function setAffinity(array $cpus): bool
 ```
 
 | 参数 | 说明 | 默认值 |
@@ -992,7 +992,7 @@ use Swoole\Process;
 
 $process = new Process(function (Process $child) {
     // CPU-ID 不得超过 swoole_cpu_num() - 1
-    var_dump($child->setAffinity([0, 1]));
+    var_dump(Process::setAffinity([0, 1]));
 });
 
 $process->start();
@@ -1005,7 +1005,7 @@ Process::wait();
 获取进程 `CPU` 亲和性。
 
 ```php
-public function getAffinity(): array
+public static function getAffinity(): array
 ```
 
 **返回值**：返回 `CPU` 核 `ID` 数组，如 `[0, 1, 3, 4]` 表示进程可被调度到 `0/1/3/4` 核运行。
@@ -1017,8 +1017,8 @@ public function getAffinity(): array
 use Swoole\Process;
 
 $process = new Process(function (Process $child) {
-    $child->setAffinity([0, 1]);
-    var_dump($child->getAffinity());
+    Process::setAffinity([0, 1]);
+    var_dump(Process::getAffinity());
 });
 
 $process->start();
@@ -1037,7 +1037,7 @@ public function setPriority(int $which, int $priority): bool
 | 参数 | 说明 | 默认值 |
 |:---|:---|:---|
 | `$which` | 优先级的作用范围，取值见下表 | 必填 |
-| `$priority` | 优先级，取值 `[-20, 20]`，值越小优先级越高 | 必填 |
+| `$priority` | 优先级，取值 `[-20, 19]`，值越小优先级越高 | 必填 |
 
 | 常量                             | 说明 |
 |:-------------------------------|:---|

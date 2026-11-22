@@ -105,7 +105,7 @@ public function connect(string $host, int $port = 0, float $timeout = 0.5, int $
 | `$host` | 服务器地址【支持自动异步解析域名，`$host` 可直接传入域名】 | 必填 |
 | `$port` | 服务器端口 | `0` |
 | `$timeout` | 设置超时时间；值单位：秒【支持浮点型，如 `1.5` 表示 `1s`+`500ms`】 | `0.5` |
-| `$flag` | `UDP客户端` 设置 `$flag = 1` 时，连接会被“绑定”到 `connect` 方法中指定的 `$host` 和 `$port`。此后，它将只接收来自这个特定 IP 和端口的数据包，并丢弃所有其他来源的数据。这可以让你在 UDP 这种 `无连接` 协议上，模拟出一个类似“连接”的行为。<br>`TCP客户端` 设置 `$flag = 1` 时，表示设置为非阻塞模式，之后此 `fd` 会变成异步 IO，`connect` 会立即返回。如果将 `$flag` 设置为 `1`，那么在 `send/recv` 前必须使用 [swoole_client_select](/zh/client/sync.html#swoole-client-select) 来检测是否可以读写。 | `0` |
+| `$flag` | `UDP客户端` 设置 `$flag = 1` 时，连接会被“绑定”到 `connect` 方法中指定的 `$host` 和 `$port`。此后，它将只接收来自这个特定 IP 和端口的数据包，并丢弃所有其他来源的数据。这可以让你在 UDP 这种 `无连接` 协议上，模拟出一个类似“连接”的行为。<br>`TCP客户端` 设置 `$flag = 1` 时，表示设置为非阻塞模式，之后此 `fd` 会变成异步 IO，`connect` 会立即返回。 | `0` |
 
 **返回值**：成功返回 `true`。失败返回 `false`，请检查 `errCode` 属性获取失败原因。
 
@@ -152,9 +152,9 @@ public function send(string $data, float $timeout = 0): int|false
 | 参数 | 说明 | 默认值 |
 |:---|:---|:---|
 | `$data` | 为发送的数据，必须为字符串类型，支持二进制数据 | 必填 |
-| `$timeout` | 超时事件。 | `0` |
+| `$timeout` | 超时时间，单位：秒。 | `0` |
 
-**返回值**：发送成功返回写入 `Socket` 缓存区的字节数，底层会尽可能地将所有数据发出。如果返回的字节数与传入的 `$data` 长度不同，可能是 `Socket` 已被对端关闭，再下一次调用 `send` 或 `recv` 时将返回对应的错误码。发送失败返回 false，可以使用 `$client->errCode` 获取错误原因。
+**返回值**：发送成功返回写入 `Socket` 缓存区的字节数，底层会尽可能地将所有数据发出。如果返回的字节数与传入的 `$data` 长度不同，可能是 `Socket` 已被对端关闭，在下一次调用 `send` 或 `recv` 时将返回对应的错误码。发送失败返回 false，可以使用 `$client->errCode` 获取错误原因。
 
 ### sendfile
 

@@ -46,7 +46,7 @@ public function listen(int $backlog = 512): bool
 |:---|:---|:---|
 | `$backlog` | Length of the listen queue [the underlying layer implements async `IO` with `epoll` and never blocks, so `backlog` is not particularly important] | `512` |
 
-**Return value**: Returns `true` on successful binding; returns `false` on failure — check the `errCode` property for the failure reason.
+**Return value**: Returns `true` on successful listening; returns `false` on failure — check the `errCode` property for the failure reason.
 
 > [!WARNING]
 > If the application contains blocking or time-consuming logic and `accept` does not accept connections in time, newly created connections pile up in the `backlog` listen queue. Once the `backlog` length is exceeded, the service rejects new incoming connections.

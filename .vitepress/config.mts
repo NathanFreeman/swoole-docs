@@ -150,14 +150,7 @@ export default defineConfig({
                     {text: '锁', link: '/zh/lock.md'},
                     {text: '函数', link: '/zh/functions.md'},
                     {text: '版本更新', link: '/zh/version_update.md'},
-                    {
-                        text: '贡献',
-                        collapsed: false,
-                        items: [
-                            {text: '团队', link: '/zh/contribute/excellent.md'},
-                            {text: '捐赠', link: '/zh/contribute/donation.md'},
-                        ]
-                    }
+                    {text: '捐赠', link: '/zh/contribute/donation.md'}
                 ],
 
 
@@ -313,14 +306,7 @@ export default defineConfig({
                     {text: 'Lock', link: '/en/lock.md'},
                     {text: 'Functions', link: '/en/functions.md'},
                     {text: 'Version Updates', link: '/en/version_update.md'},
-                    {
-                        text: 'Contribute',
-                        collapsed: false,
-                        items: [
-                            {text: 'Team', link: '/en/contribute/excellent.md'},
-                            {text: 'Donation', link: '/en/contribute/donation.md'},
-                        ]
-                    }
+                    {text: 'Donation', link: '/en/contribute/donation.md'}
                 ],
 
                 outline: {level: [2, 3], label: 'On this page'},

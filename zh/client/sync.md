@@ -102,7 +102,7 @@ $client = new Client(SWOOLE_SOCK_TCP | SWOOLE_KEEP); // 开启长连接
 ```
 
 > [!WARNING]
-> 在协程环境下使用此 `Swoole\Client` 会导致退步为同步阻塞环境。
+> 在协程环境下使用此 `Swoole\Client` 会导致退化为同步阻塞环境。
 
 ### set
 
@@ -341,8 +341,8 @@ public function getpeername(): array|false
 
 | 参数名  | 类型     | 说明      |
 |------|--------|---------|
-| host | string | 客户端IP地址 |
-| port | int    | 客户端端口号  |
+| host | string | 对端（服务器）IP地址 |
+| port | int    | 对端（服务器）端口号  |
 
 ### close
 

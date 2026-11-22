@@ -459,7 +459,7 @@ $server->set(['dispatch_func' => function (Swoole\Server $server, int $fd, int $
 > [!WARNING]
 > **Notes**
 >
-> - If the returned process ID is not within `[0, worker_num - 1]`, the data is discarded.
+> - If the returned worker process number is not within `[0, worker_num - 1]`, the data is discarded.
 > - `dispatch_func` can only be used in [SWOOLE_PROCESS mode](/en/server/process_thread.html#swoole-process).
 > - `dispatch_func` takes precedence over `dispatch_mode`.
 
@@ -487,7 +487,7 @@ $server->set(['daemonize' => true]);
 
 ## display_errors
 
-Enables / disables `Swoole` error messages. The default is `false`.
+Enables / disables `Swoole` error messages. The default is `true`.
 
 **Example**
 
@@ -817,7 +817,7 @@ This option checks the data sent by the client: the underlying layer stops recei
 <?php
 $server->set([
     'open_eof_check' => true,
-    'package_eof' => '\r\n',
+    'package_eof' => "\r\n",
 ]);
 ```
 
@@ -838,7 +838,7 @@ The underlying layer scans the data stream byte by byte and, each time it encoun
 <?php
 $server->set([
     'open_eof_split' => true,
-    'package_eof' => '\r\n',
+    'package_eof' => "\r\n",
 ]);
 ```
 
@@ -860,7 +860,7 @@ Sets the packet delimiter.
 <?php
 $server->set([
     'open_eof_split' => true,
-    'package_eof' => '\r\n',
+    'package_eof' => "\r\n",
 ]);
 ```
 
@@ -1039,7 +1039,7 @@ $server->set([
         }
 
         // Assume the protocol is "LENGTH:123\n"; use a regex to extract the length from the start of the received data
-        if (preg_match('/^LENGTH:(\d+)\\\n/', $data, $match)) {
+        if (preg_match('/^LENGTH:(\d+)\n/', $data, $match)) {
             $length = (int)$match[1];
             
             // Get the length of the entire header to compute the full packet length
@@ -1328,7 +1328,7 @@ $server->set([
 
 Sets the protocols for OpenSSL tunnel encryption. Default: `0`, supporting all protocols.
 
-The supported protocol types are `SWOOLE_SSL_TLSv1`, `SWOOLE_SSL_TLSv1`, `SWOOLE_SSL_TLSv1`, `SWOOLE_SSL_TLSv1`, `SWOOLE_SSL_SSL`, `SWOOLE_SSL_SSLv3`.
+The supported protocol types are `SWOOLE_SSL_TLSv1`, `SWOOLE_SSL_TLSv1_1`, `SWOOLE_SSL_TLSv1_2`, `SWOOLE_SSL_TLSv1_3`, `SWOOLE_SSL_SSLv2`, `SWOOLE_SSL_SSLv3`.
 
 **Example**
 
@@ -2091,7 +2091,6 @@ Enables `HTTP` protocol message parsing.
 
 ```php
 <?php
-use Swoole\Server;
 use Swoole\Http\Server;
 use Swoole\Http\Request;
 use Swoole\Http\Response;
@@ -2109,7 +2108,7 @@ $port = $http->listen('127.0.0.1', 9502, SWOOLE_TCP);
 // If you have read the multi-port listening chapter, you know this is not required, because child ports inherit the parent port's configuration; this only demonstrates how to configure it.
 $port->set(['open_http_protocol' => true]); 
 
-$http->on('request', function(Request $request, Response $response) {
+$port->on('request', function(Request $request, Response $response) {
   $response->header("Content-Type", "text/html; charset=utf-8");
   $response->end("<h1>Hello World. #".rand(1000, 9999)."</h1>");
 });
@@ -2223,7 +2222,7 @@ With coroutines enabled, if the data the server sends to a client fills the send
 $server->set([
   'send_yield' => true,
   'enable_coroutine' => true,
-])
+]);
 ```
 
 > [!WARNING]
@@ -2243,7 +2242,7 @@ $server->set([
   'send_yield' => true,
   'send_timeout' => 1.5,
   'enable_coroutine' => true,
-])
+]);
 ```
 
 ## socket_dns_timeout
@@ -2364,7 +2363,7 @@ The maximum number of retries after TCP KeepAlive probes fail before the connect
 ```php
 <?php
 $server->set([
-  'tcp_keepinterval' => 100
+  'tcp_keepcount' => 100
 ]);
 ```
 
@@ -2719,7 +2718,7 @@ $server->set([
 <?php
 $server->set([
   'print_backtrace_on_error' => true
-])
+]);
 ```
 
 ## c_stack_size / stack_size
@@ -2732,8 +2731,8 @@ $server->set([
 ```php
 <?php
 $server->set([
-  'c_stack_size' => '4 * 1024'
-])
+  'c_stack_size' => 4 * 1024 * 1024
+]);
 ```
 
 > [!NOTE]
@@ -2775,7 +2774,7 @@ $server->set([
 <?php
 $server->set([
   'debug_mode' => true
-])
+]);
 ```
 
 > [!NOTE]

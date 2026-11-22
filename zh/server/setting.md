@@ -398,7 +398,7 @@ $server->set(['dispatch_mode' => SWOOLE_DISPATCH_FDMOD]);
 
 | 模式值                             | 模式名称      | 分配策略                                | 核心作用                                    |
 |:--------------------------------|:----------|:------------------------------------|:----------------------------------------|
-| `SWOOLE_DISPATCH_ROUND`         | 轮循模式      | 依次轮询分配给每个 worker进程                  | 请求均匀分布，适合无状态服务                          |
+| `SWOOLE_DISPATCH_ROUND`         | 轮询模式      | 依次轮询分配给每个 worker进程                  | 请求均匀分布，适合无状态服务                          |
 | `SWOOLE_DISPATCH_FDMOD`         | 固定模式（FD）  | 根据连接 FD 取模分配                        | 同一连接数据固定在同一 worker进程，适合长连接或有状态服务        |
 | `SWOOLE_DISPATCH_IDLE_WORKER`   | 抢占模式      | 主进程根据 worker进程 忙闲状态动态投递             | 优先分配给空闲 worker进程，提高资源利用率，避免阻塞           |
 | `SWOOLE_DISPATCH_IPMOD`         | IP 哈希模式   | 对客户端 IP 进行取模分配                      | 同一来源 IP 的连接固定到同一 worker进程，适合基于 IP 的会话保持 |
@@ -459,7 +459,7 @@ $server->set(['dispatch_func' => function (Swoole\Server $server, int $fd, int $
 > [!WARNING]
 > **注意**
 >
-> - 返回的进程序不在 `[0, worker_num - 1]` 的话，数据会被丢弃。
+> - 返回的进程序号不在 `[0, worker_num - 1]` 的话，数据会被丢弃。
 > - `dispatch_func` 只能在 [SWOOLE_PROCESS 模式](/zh/server/process_thread.html#swoole-process) 下使用。
 > - `dispatch_func` 的优先级大于 `dispatch_mode`。
 
@@ -487,7 +487,7 @@ $server->set(['daemonize' => true]);
 
 ## display_errors
 
-开启 / 关闭 `Swoole` 错误信息。默认值为 `false`。
+开启 / 关闭 `Swoole` 错误信息。默认值为 `true`。
 
 **示例**
 
@@ -740,7 +740,7 @@ $server->set([
 > **注意**
 >
 > - 服务端并不会主动向客户端发送心跳包，而是被动等待客户端发送心跳。服务器端的 `heartbeat_check` 仅仅是检测连接上一次发送数据的时间，如果超过限制，将切断连接。
-> - 此选项表示每隔多久轮循一次，单位为秒。如 `heartbeat_check_interval => 60`，表示每 60 秒，遍历所有连接，如果该连接在 `heartbeat_idle_time` 秒内没有向服务器发送任何数据，此连接将被强制关闭。
+> - 此选项表示每隔多久轮询一次，单位为秒。如 `heartbeat_check_interval => 60`，表示每 60 秒，遍历所有连接，如果该连接在 `heartbeat_idle_time` 秒内没有向服务器发送任何数据，此连接将被强制关闭。
 > - 若未配置，则不会启用心跳，该配置默认关闭。
 > - 被心跳检测切断的连接依然会触发 [close 事件回调](/zh/server/events.html#close)。
 
@@ -817,7 +817,7 @@ $server->set(['package_max_length' => 2 * 1024 * 1024]);
 <?php
 $server->set([
     'open_eof_check' => true,
-    'package_eof' => '\r\n',
+    'package_eof' => "\r\n",
 ]);
 ```
 
@@ -838,7 +838,7 @@ $server->set([
 <?php
 $server->set([
     'open_eof_split' => true,
-    'package_eof' => '\r\n',
+    'package_eof' => "\r\n",
 ]);
 ```
 
@@ -860,7 +860,7 @@ $server->set([
 <?php
 $server->set([
     'open_eof_split' => true,
-    'package_eof' => '\r\n',
+    'package_eof' => "\r\n",
 ]);
 ```
 
@@ -1039,7 +1039,7 @@ $server->set([
         }
 
         // 假设协议是 "LENGTH:123\n"，用正则从收到的数据开头提取长度
-        if (preg_match('/^LENGTH:(\d+)\\\n/', $data, $match)) {
+        if (preg_match('/^LENGTH:(\d+)\n/', $data, $match)) {
             $length = (int)$match[1];
             
             // 获取整个包头的长度，以便计算完整包长
@@ -1328,7 +1328,7 @@ $server->set([
 
 设置 OpenSSL 隧道加密的协议。默认值：`0`，支持全部协议。
 
-支持的协议类型有 `SWOOLE_SSL_TLSv1`、`SWOOLE_SSL_TLSv1`、`SWOOLE_SSL_TLSv1`、`SWOOLE_SSL_TLSv1`、`SWOOLE_SSL_SSL`、`SWOOLE_SSL_SSLv3`。
+支持的协议类型有 `SWOOLE_SSL_TLSv1`、`SWOOLE_SSL_TLSv1_1`、`SWOOLE_SSL_TLSv1_2`、`SWOOLE_SSL_TLSv1_3`、`SWOOLE_SSL_SSLv2`、`SWOOLE_SSL_SSLv3`。
 
 **示例**
 
@@ -2091,12 +2091,11 @@ $server->set([
 
 ```php
 <?php
-use Swoole\Server;
 use Swoole\Http\Server;
 use Swoole\Http\Request;
 use Swoole\Http\Response;
 
-// 先起启动一个 HTTP 服务器 - 1
+// 先启动一个 HTTP 服务器 - 1
 $http = new Server('127.0.0.1', 9501);
 $http->on('request', function(Request $request, Response $response) {
   $response->header("Content-Type", "text/html; charset=utf-8");
@@ -2109,7 +2108,7 @@ $port = $http->listen('127.0.0.1', 9502, SWOOLE_TCP);
 // 如果你已经阅读了这个多端口监听的章节，就会知道这个是非必须的，因为子端口会继承父端口的配置，这里只是演示如何配置。
 $port->set(['open_http_protocol' => true]); 
 
-$http->on('request', function(Request $request, Response $response) {
+$port->on('request', function(Request $request, Response $response) {
   $response->header("Content-Type", "text/html; charset=utf-8");
   $response->end("<h1>Hello World. #".rand(1000, 9999)."</h1>");
 });
@@ -2223,7 +2222,7 @@ $server->set([
 $server->set([
   'send_yield' => true,
   'enable_coroutine' => true,
-])
+]);
 ```
 
 > [!WARNING]
@@ -2243,7 +2242,7 @@ $server->set([
   'send_yield' => true,
   'send_timeout' => 1.5,
   'enable_coroutine' => true,
-])
+]);
 ```
 
 ## socket_dns_timeout
@@ -2364,7 +2363,7 @@ TCP KeepAlive 探测失败后，关闭连接前的最大重试次数。它决定
 ```php
 <?php
 $server->set([
-  'tcp_keepinterval' => 100
+  'tcp_keepcount' => 100
 ]);
 ```
 
@@ -2721,7 +2720,7 @@ $server->set([
 <?php
 $server->set([
   'print_backtrace_on_error' => true
-])
+]);
 ```
 
 ## c_stack_size / stack_size
@@ -2734,8 +2733,8 @@ $server->set([
 ```php
 <?php
 $server->set([
-  'c_stack_size' => '4 * 1024'
-])
+  'c_stack_size' => 4 * 1024 * 1024
+]);
 ```
 
 > [!NOTE]
@@ -2777,7 +2776,7 @@ $server->set([
 <?php
 $server->set([
   'debug_mode' => true
-])
+]);
 ```
 
 > [!NOTE]

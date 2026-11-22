@@ -44,7 +44,7 @@ public ?array $cookies = null;
 The request body. A string is sent as-is; an array is automatically encoded in `application/x-www-form-urlencoded` format.
 
 ```php
-public string $data = '';
+public string|array $data = '';
 ```
 
 ### pipeline

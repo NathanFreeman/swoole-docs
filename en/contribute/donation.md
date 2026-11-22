@@ -14,7 +14,7 @@
 | [shopxo.net](https://shopxo.net/)                                          | 1024 CNY    | [![ShopXO](https://wenda-1252906962.file.myqcloud.com/images/sponsors/shopxo.png)](https://shopxo.net/)                                                                 |
 | [SegmentFault](https://segmentfault.com/)                                  | 1024 CNY    | [![](https://cdn.jsdelivr.net/gh/sy-records/staticfile/images/swoole/segmentfault.svg "SegmentFault")](https://segmentfault.com/)                                       |
 | [果酱社区](https://guojiang.club/?utm_source=swoole&utm_campaign=sponsor)      | 3000 CNY    | [![](https://wiki.swoole.com/static/uploads/wiki/202001/19/273190976660.jpg "果酱社区 :size=autox150")](https://guojiang.club/?utm_source=swoole&utm_campaign=sponsor)      |
-| [易软天创](https://www.easycorp.cn/)                                           | 3000 CNY    | [![ShopXO](https://wenda-1252906962.file.myqcloud.com/images/sponsors/easysoft.png)](https://www.easycorp.cn/)                                                          |
+| [易软天创](https://www.easycorp.cn/)                                           | 3000 CNY    | [![易软天创](https://wenda-1252906962.file.myqcloud.com/images/sponsors/easysoft.png)](https://www.easycorp.cn/)                                                          |
 | [六星教育](https://www.sixstaredu.com/)                                        | 4000 CNY    | [![](https://wiki.swoole.com/static/uploads/wiki/201812/03/197630887599.jpg "六星教育 :size=autox150")](https://www.sixstaredu.com/)                                        |
 | [codecasts.com](https://codecasts.com/)                                    | 8000 CNY    | [![](https://user-images.githubusercontent.com/6011686/28741127-791014ae-7442-11e7-929e-114e5047d9e5.png "codecasts")](https://codecasts.com/)                          |
 | [51talk](http://www.51talk.com/)                                           | 10000 CNY   | [![](https://static.51talk.com/static/images/html/www_new/common/log.png?v=2017-12-21 "51talk")](http://www.51talk.com/)                                                |
@@ -36,7 +36,7 @@
 <tr><td>100.00</td><td>0x7c6</td><td>Thanks for your open source project!</td><td>OSChina</td></tr>
 <tr><td>50.00</td><td>WeKeey</td><td>Thanks for your open source project!</td><td>OSChina</td></tr>
 <tr><td>200.00</td><td>高久峰</td><td>Hope the swoole coroutine client ecosystem keeps getting better</td><td>OSChina</td></tr>
-<tr><td>5000.00</td><td>zhiwei*@gmail.com</td><td>美联软通 SMS platform</td><td>Alipay</td></tr>
+<tr><td>5000.00</td><td>zhiwei*@gmail.com</td><td>Meilian Ruantong SMS platform</td><td>Alipay</td></tr>
 <tr><td>3072.00</td><td>wanjochan wan***@gmail.com</td><td>Decided to donate an extra 1k since we started using it in production</td><td>Alipay</td></tr>
 <tr><td>3000.00</td><td>易软天创 http://www.cnezsoft.com/</td><td>-</td><td>OSChina</td></tr>
 <tr><td>2998.00</td><td>Kimi  jian***@gmail.com </td><td>Hope Rango keeps making Swoole great</td><td>Alipay</td></tr>
@@ -73,8 +73,8 @@
 <tr><td>10.00</td><td>我是一只小尼玛</td><td>-</td><td>WeChat</td></tr>
 <tr><td>6.66</td><td>不死鸟 bir***@sina.com</td><td>Keep it up! swoole will take over the world.</td><td>Alipay</td></tr>
 <tr><td>128.00</td><td>一路向北 134****4818</td><td>Keep up the good work</td><td>Alipay</td></tr>
-<tr><td>100.00</td><td>雅方同学 135****5404</td><td>板牙救援——杨雅方</td><td>Alipay</td></tr>
-<tr><td>100.00</td><td>勇辉 133****2017</td><td>板牙救援-陈勇辉</td><td>Alipay</td></tr>
+<tr><td>100.00</td><td>雅方同学 135****5404</td><td>Banya Rescue — Yang Yafang</td><td>Alipay</td></tr>
+<tr><td>100.00</td><td>勇辉 133****2017</td><td>Banya Rescue - Chen Yonghui</td><td>Alipay</td></tr>
 <tr><td>58.00</td><td>行者 gej***@sohu.com</td><td>Support swoole, keep it up!!</td><td>Alipay</td></tr>
 <tr><td>100.00</td><td>	钱大 zhi***@163.com</td><td>Thanks swoole</td><td>Alipay</td></tr>
 <tr><td>100.00</td><td>强 dre***@126.com</td><td>swoole</td><td>Alipay</td></tr>
@@ -91,7 +91,7 @@
 <tr><td>16.00</td><td>麻辣烫 137****0761</td><td>A small token</td><td>Alipay</td></tr><tr><td>100.00</td><td>鹏 186****8597</td><td>Some support</td><td>Alipay</td></tr><tr><td>100.00</td><td>浩天 185****2081</td><td>Hope swoole keeps getting better</td><td>Alipay</td></tr>
 <tr><td>100.00</td><td>aibo aib***@vhost.com.cn</td><td>Some support</td><td>Alipay</td></tr>
 <tr><td>10.00</td><td>白枫 133****8172</td><td>Donating to swoole</td><td>Alipay</td></tr>
-<tr><td>100.00</td><td>错因太帅 189***@163.com</td><td>May swool flourish</td><td>Alipay</td></tr>
+<tr><td>100.00</td><td>错因太帅 189***@163.com</td><td>May swoole flourish</td><td>Alipay</td></tr>
 <tr><td>18.00</td><td>拭血 lsg***@126.com</td><td>Thumbs up for open source</td><td>Alipay</td></tr>
 <tr><td>100.00</td><td>老马 chanyu@21cn.net</td><td>swoole stays grounded and keeps moving forward!</td><td>Alipay</td></tr>
 <tr><td>100.00</td><td>Persi ipe***@sixsir.com</td><td>A small token; thanks to the Swoole team.</td><td>Alipay</td></tr>

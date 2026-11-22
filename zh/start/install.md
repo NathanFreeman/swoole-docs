@@ -11,7 +11,7 @@
 
 | Swoole 版本 | 最低 PHP 版本 |
 |:---|:---|
-| `6.0` | PHP `8.0` |
+| `6.0` | PHP `8.1` |
 | `6.1` | PHP `8.1` |
 | `6.2` | PHP `8.2` |
 
@@ -38,7 +38,7 @@ Swoole 的部分功能需要额外的系统库支持。下表中 **✅ 必需** 
 | | `make` | Make 构建工具，执行编译任务 | ✅ 必需 |
 | | `gcc` | GNU C 编译器，编译 C/C++ 代码 | ✅ 必需 |
 | **加密支持** | `libssl-dev` | OpenSSL 开发库，提供 HTTPS、加密等功能 | ✅ 必需 |
-| **压缩算法** | `libbrotli-dev` | Brotli 压缩库，常用于网页压缩 | ✅ 必需 |
+| **压缩算法** | `libbrotli-dev` | Brotli 压缩库，常用于网页压缩 | ⚠️ 按需 |
 | | `zlib1g-dev` | zlib 压缩库，支持 gzip 格式 | ⚠️ 按需 |
 | | `libzstd-dev` | Zstandard 压缩库，高性能压缩 | ⚠️ 按需 |
 | **网络支持** | `libc-ares-dev` | 异步 DNS 解析库 | ⚠️ 按需 |
@@ -121,7 +121,7 @@ pie install swoole/swoole:6.2.0
 也可在安装前指定功能选项：
 
 ```shell
-pie install swoole/swoole:6.2.0 --enable-socket --enable-swoole-curl
+pie install swoole/swoole:6.2.0 --enable-sockets --enable-swoole-curl
 ```
 
 ### 方式三：从源码编译安装
@@ -183,8 +183,8 @@ PECL/PIE 或源码安装执行 `./configure` 时，可添加以下参数以开�
 | `--with-swoole-oracle` | 启用 `pdo_oci` 的协程化支持，用于 Oracle 数据库。 | 依赖 `oracle-client-sdk` 库。示例：`--with-swoole-oracle=instantclient,/usr/local/instantclient` |
 | `--enable-swoole-sqlite` | 启用 `pdo_sqlite` 的协程化支持。 | 依赖 `sqlite3`、`libsqlite3-dev` 库。 |
 | `--enable-swoole-thread` | 开启[多线程模式](/zh/thread/create.html)，将进程模型变为单进程多线程。 | 要求 PHP 为 ZTS 版本，Swoole 6.0+。 |
-| `--enable-iouring` | 使用 `io_uring` 替代线程池处理[文件异步 I/O](/zh/file_async.html)。 | 需高版本 Linux 内核及 `liburing >= 2.8`，Swoole 6.0+。 |
-| `--enable-iouring-dir` | 指定 `liburing` 库路径。 | 需高版本 Linux 内核及 `liburing >= 2.8`，Swoole 6.0+。 |
+| `--enable-iouring` | 使用 `io_uring` 替代线程池处理[文件异步 I/O](/zh/file_async.html)。 | 需高版本 Linux 内核及 `liburing >= 2.6`（Swoole 6.2+ 需 `>= 2.8`）。 |
+| `--with-liburing-dir` | 指定 `liburing` 库路径。 | 需高版本 Linux 内核及 `liburing >= 2.6`（Swoole 6.2+ 需 `>= 2.8`）。 |
 | `--enable-uring-socket` | 使用 `io_uring` 替代 `epoll/kqueue` 处理 Socket I/O。 | 依赖 `--enable-iouring`，Swoole 6.2+。 |
 | `--enable-zstd` | 启用 Zstandard 压缩算法支持。 | 依赖 `libzstd` 库，Swoole 6.0+。 |
 | `--with-swoole-ssh2` | 启用 `ssh2` 的协程化支持。 | Swoole 6.2+ 可用。 |

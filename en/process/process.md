@@ -47,7 +47,7 @@ public int $msgQueueId
 The `key` of the message queue.
 
 ```php
-public string $msgQueueKey
+public ?int $msgQueueKey
 ```
 
 ## Methods
@@ -57,14 +57,14 @@ public string $msgQueueKey
 Constructor. It only creates the object and stores the child process callback; it does not `fork` a process. The child process is actually created only after calling [start](#start).
 
 ```php
-public function __construct(callable $function, bool $redirect_stdin_stdout = false, int $pipe_type = Swoole\Process::PIPE_TYPE_STREAM, bool $enable_coroutine = false)
+public function __construct(callable $function, bool $redirect_stdin_stdout = false, int $pipe_type = Swoole\Process::PIPE_TYPE_DGRAM, bool $enable_coroutine = false)
 ```
 
 | Parameter | Description | Default |
 |:---|:---|:---|
 | `$function` | Callback function executed after the child process starts. The underlying layer stores it in the object's `callback` property, which is `private` and cannot be accessed externally | Required |
 | `$redirect_stdin_stdout` | Redirect the child process's standard input and output. When enabled, the child process's output is written to the parent process's pipe instead of the screen, and keyboard input is read from the pipe instead, with blocking reads by default. See [exec](#exec) | `false` |
-| `$pipe_type` | The `unixSocket` type. This parameter is ignored when `$redirect_stdin_stdout` is enabled and is forced to `Swoole\Process::PIPE_TYPE_STREAM`.<br>Set it to `Swoole\Process::PIPE_TYPE_NONE` when no inter-process communication is needed inside the child process | `Swoole\Process::PIPE_TYPE_STREAM` |
+| `$pipe_type` | The `unixSocket` type. This parameter is ignored when `$redirect_stdin_stdout` is enabled and is forced to `Swoole\Process::PIPE_TYPE_STREAM`.<br>Set it to `Swoole\Process::PIPE_TYPE_NONE` when no inter-process communication is needed inside the child process | `Swoole\Process::PIPE_TYPE_DGRAM` |
 | `$enable_coroutine` | Enable coroutines in `$function`; once enabled, coroutine `API`s can be used directly | `false` |
 
 **`$pipe_type` values**
@@ -665,7 +665,7 @@ Process::wait(true);
 Close the created `unixSocket` pipe communication.
 
 ```php
-public function close(int $which): bool
+public function close(int $which = 0): bool
 ```
 | Parameter | Description | Default |
 |:---|:---|:---|
@@ -707,7 +707,7 @@ public function useQueue(int $key = 0, int $mode = SWOOLE_MSGQUEUE_BALANCE, int 
 |:---|:---|:---|
 | `$key` | The `key` of the message queue. When a value `<= 0` is passed, the underlying layer uses `ftok` to generate the `key` from the filename of the currently executing file | `0` |
 | `$mode` | Communication mode.<br>`SWOOLE_MSGQUEUE_BALANCE`: `pop()` takes the first message in the queue, and `push()` attaches no type. All processes compete equally; whoever calls `pop()` first takes the head message. This is competitive consumption/load balancing, suitable for multiple processes handling the same batch of tasks;<br>`SWOOLE_MSGQUEUE_ORIENT`: `push()` attaches `process id + 1` as the type, and `pop()` only takes messages of that type. Messages are delivered precisely to the specified process. This is directed delivery, suitable for point-to-point communication | `SWOOLE_MSGQUEUE_BALANCE` |
-| `$capacity` | Maximum number of messages the queue can store | `-1` |
+| `$capacity` | Maximum total bytes of data the queue can store (corresponds to the system's `msg_qbytes`) | `-1` |
 
 > [!WARNING]
 > `pop()` blocks when the queue is empty, and `push()` blocks when the queue is full. For non-blocking behavior, `$mode` must be `SWOOLE_MSGQUEUE_BALANCE | Swoole\Process::IPC_NOWAIT` or `SWOOLE_MSGQUEUE_ORIENT | Swoole\Process::IPC_NOWAIT`.
@@ -972,7 +972,7 @@ run(function () {
 Set `CPU` affinity, binding the process to specified `CPU` cores and leaving the remaining cores to more important programs.
 
 ```php
-public function setAffinity(array $cpus): bool
+public static function setAffinity(array $cpus): bool
 ```
 
 | Parameter | Description | Default |
@@ -992,7 +992,7 @@ use Swoole\Process;
 
 $process = new Process(function (Process $child) {
     // CPU-ID must not exceed swoole_cpu_num() - 1
-    var_dump($child->setAffinity([0, 1]));
+    var_dump(Process::setAffinity([0, 1]));
 });
 
 $process->start();
@@ -1005,7 +1005,7 @@ Process::wait();
 Get the process's `CPU` affinity.
 
 ```php
-public function getAffinity(): array
+public static function getAffinity(): array
 ```
 
 **Return value**: Returns an array of `CPU` core `ID`s; e.g. `[0, 1, 3, 4]` means the process can be scheduled to run on cores `0/1/3/4`.
@@ -1017,8 +1017,8 @@ public function getAffinity(): array
 use Swoole\Process;
 
 $process = new Process(function (Process $child) {
-    $child->setAffinity([0, 1]);
-    var_dump($child->getAffinity());
+    Process::setAffinity([0, 1]);
+    var_dump(Process::getAffinity());
 });
 
 $process->start();
@@ -1037,7 +1037,7 @@ public function setPriority(int $which, int $priority): bool
 | Parameter | Description | Default |
 |:---|:---|:---|
 | `$which` | Scope of the priority; see the table below for values | Required |
-| `$priority` | Priority, in the range `[-20, 20]`; the smaller the value, the higher the priority | Required |
+| `$priority` | Priority, in the range `[-20, 19]`; the smaller the value, the higher the priority | Required |
 
 | Constant | Description |
 |:---|:---|

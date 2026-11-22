@@ -36,7 +36,7 @@ php --ri swoole
 ### 新特性
 - 新增协程化`FTP`客户端，现通过编译时加入`--enable-swoole-ftp`选项，即可启用`FTP`操作的协程化支持，避免网络阻塞
 - 新增协程化`SSH`客户端，现通过编译时加入`--with-swoole-ssh2`选项，即可启用`SSH`操作的协程化支持，提升并发效率
-- 新增`HTTP`协程服务端支持`io_uring`，`HTTP`协程服务端现可选用高性能的`io_uring`事件机制。在编译时加入`--enable-uring_socket`选项即可启用，以获得更优的 I/O 性能
+- 新增`HTTP`协程服务端支持`io_uring`，`HTTP`协程服务端现可选用高性能的`io_uring`事件机制。在编译时加入`--enable-uring-socket`选项即可启用，以获得更优的 I/O 性能
 - 新增`Swoole\RemoteObject\Server`模块，为`MongoDB`提供透明化的协程操作支持
 - 新增`Swoole\Coroutine::setTimeLimit()`函数，用于控制协程执行超时时间，防止协程长时间占用资源
 - 为`HTTP`静态文件服务器添加`URL`重写支持
@@ -78,8 +78,8 @@ php --ri swoole
 ## v6.2.0-rc2
 ### 新特性
 - 新增协程化`FTP`客户端，现通过编译时加入`--enable-swoole-ftp`选项，即可启用`FTP`操作的协程化支持，避免网络阻塞
-- 新增协程化`SSH`客户端，现通过编译时加入`--enable-swoole-ssh`选项，即可启用`SSH`操作的协程化支持，提升并发效率
-- 新增`HTTP`协程服务端支持`io_uring`，`HTTP`协程服务端现可选用高性能的`io_uring`事件机制。在编译时加入`--enable-uring_socket`选项即可启用，以获得更优的 I/O 性能
+- 新增协程化`SSH`客户端，现通过编译时加入`--with-swoole-ssh2`选项，即可启用`SSH`操作的协程化支持，提升并发效率
+- 新增`HTTP`协程服务端支持`io_uring`，`HTTP`协程服务端现可选用高性能的`io_uring`事件机制。在编译时加入`--enable-uring-socket`选项即可启用，以获得更优的 I/O 性能
 - 新增`Swoole\RemoteObject\Server`模块，为`MongoDB`提供透明化的协程操作支持
 - 新增`Swoole\Coroutine::setTimeLimit()`函数，用于控制协程执行超时时间，防止协程长时间占用资源
 - 为`HTTP`静态文件服务器添加`URL`重写支持
@@ -121,8 +121,8 @@ php --ri swoole
 ## v6.2.0-rc1
 ### 新特性
 - 新增协程化`FTP`客户端，现通过编译时加入`--enable-swoole-ftp`选项，即可启用`FTP`操作的协程化支持，避免网络阻塞
-- 新增协程化`SSH`客户端，现通过编译时加入`--enable-swoole-ssh`选项，即可启用`SSH`操作的协程化支持，提升并发效率
-- 新增`HTTP`协程服务端支持`io_uring`，`HTTP`协程服务端现可选用高性能的`io_uring`事件机制。在编译时加入`--enable-uring_socket`选项即可启用，以获得更优的 I/O 性能
+- 新增协程化`SSH`客户端，现通过编译时加入`--with-swoole-ssh2`选项，即可启用`SSH`操作的协程化支持，提升并发效率
+- 新增`HTTP`协程服务端支持`io_uring`，`HTTP`协程服务端现可选用高性能的`io_uring`事件机制。在编译时加入`--enable-uring-socket`选项即可启用，以获得更优的 I/O 性能
 - 新增`Swoole\RemoteObject\Server`模块，为`MongoDB`提供透明化的协程操作支持
 - 新增`Swoole\Coroutine::setTimeLimit()`函数，用于控制协程执行超时时间，防止协程长时间占用资源
 - 为`HTTP`静态文件服务器添加`URL`重写支持
@@ -245,11 +245,11 @@ use function Swoole\Coroutine\run;
 Swoole\Runtime::enableCoroutine(SWOOLE_HOOK_ALL & ~SWOOLE_HOOK_FILE);
 
 run(function() {
-    $fp = fopen("async.file:///home/test", "r");
+    $fp = fopen("async.file:///home/test", "w");
     fwrite($fp, "data");
     fclose($fp);
 
-   $content = file_get_contents("async.file:///home/test.txt");
+   $content = file_get_contents("async.file:///home/test");
 });
 ```
 
@@ -299,7 +299,7 @@ run(function() {
 - `ext-swoole` 的用户，需在编译时添加`--enable-swoole-stdext`来启用
 - `stdext` 在 `php-cli`、`php-fpm`、`cli-http-server`、`swoole` 模式均可使用
 
-### 础类型对象化
+### 基础类型对象化
 
 `6.1` 版本实现了`array`/`string`/`stream`基础类型的对象化封装，支持面向对象风格的方法调用，可直接对这些类型的变量调用内置方法。
 
@@ -328,7 +328,7 @@ $array[2000] = 2025; // 错误，抛出异常
 - `Swoole\Coroutine::cancel()` 新增 `$throw_exception` 参数，支持在取消协程时抛出异常。
 - `Swoole\Coroutine\Http\Client` 与 `Swoole\Coroutine\Http\Server` 现已支持接收 WebSocket 分块消息。
 - 为 `Swoole\Coroutine\Http\Client` 和 `Swoole\Coroutine\Http\Server` 新增 `disconnect` 与 `ping` 方法。
-- 重构`Swoole\Coroutine\Lock`，`Swoole\Lock`和，`Swoole\Thread\Lock`，只保留`__construct`，`lock`和`unlock`方法，使用上更加贴近`php flock`。
+- 重构`Swoole\Coroutine\Lock`、`Swoole\Lock`和`Swoole\Thread\Lock`，只保留`__construct`，`lock`和`unlock`方法，使用上更加贴近`php flock`。
 
 ### Bug 修复
 - **线程模式优化**：
@@ -361,7 +361,7 @@ $array[2000] = 2025; // 错误，抛出异常
     - 修复当系统没有`zlib`时，处理客户端`Accept-Encoding: zlib`请求头会触发未知压缩方法警告的问题。
 
 ### 废弃
-- 不再支持`select`事件机制，`select`仅支持`1024`个句柄的事件监听，存在严重缺陷，在不支持`epoll/kqueue`的平台将使用`poll`作为事件轮训机制，这使得`Cygwin`平台下也可以支持大量并发。
+- 不再支持`select`事件机制，`select`仅支持`1024`个句柄的事件监听，存在严重缺陷，在不支持`epoll/kqueue`的平台将使用`poll`作为事件轮询机制，这使得`Cygwin`平台下也可以支持大量并发。
 - 在`Swoole\Server::stop()`方法中，第二个参数`$waitEvent`已被废弃，请使用`reload_async`参数。
 
 ### 架构优化
@@ -381,7 +381,7 @@ $array[2000] = 2025; // 错误，抛出异常
 - 增加`aarch64`和`macOS`环境下的单元测试。
 - 优化底层客户端网络地址解析和设置。
 - 为 `Server`模块增加`ssl_cafile/ssl_capath`配置项。
-- 增加`print_backtrace_on_error`配置，此配置可以在发生位置错误时候，打印C函数的堆栈。
+- 增加`print_backtrace_on_error`配置，此配置可以在发生未知错误时候，打印C函数的堆栈。
 - 增加`Address Sanitizer`调试工具。
 - 增加`Cygwin`测试，显著提升`Cygwin`平台下的兼容性和稳定性
 - 在 `macOS` 系统中，由于 `kqueue` 事件机制不支持跨进程管道事件监听，导致无法使用 `SWOOLE_PROCESS` 模式和 `Task` 进程功能。因此，系统将默认采用 `poll` 作为底层事件机制。如需启用 `kqueue`，可以通过`Swoole\Server::set(['enable_kqueue' => true])`和`swoole_async_set(['enable_kqueue' => true])`方法手动开启。
@@ -401,7 +401,7 @@ $array[2000] = 2025; // 错误，抛出异常
 - `Swoole`协议在处理控制帧时，会主动设置 FIN 标志位为 1，并确保不启用压缩（即 RSV1 位为 0），用户对此的设置将被忽略。
 - 当处理连续帧的压缩和发送时，`Swoole`将压缩与数据分块的职责移交至应用层，用户需手动实现相关逻辑。具体请看最下面的例子。
 - 系统默认启用了自动`HTTP 100 Continue`响应功能。
-- 在协程切换期间，将会保存并恢复`serialize`与`unsealize`操作相关的全局变量。
+- 在协程切换期间，将会保存并恢复`serialize`与`unserialize`操作相关的全局变量。
 
 
 ### API变更
@@ -442,6 +442,9 @@ $lock->unlock();
 
 ### 取消协程
 ```php
+use Swoole\Coroutine as Co;
+use Swoole\Coroutine\System;
+
 Co\run(function () {
     $cid = Co\go(function () {
         try {
@@ -470,7 +473,7 @@ Co\run(function () {
 use Swoole\WebSocket\Server;
 use Swoole\WebSocket\Frame;
 
-$server = Server('127.0.0.1', 9502);
+$server = new Server('127.0.0.1', 9502);
 $server->set(['websocket_compression' => true]);
 $server->on('message', function (Server $server, Frame $frame) {
     $data1 = bin2hex(random_bytes(10 * 1024));
@@ -492,7 +495,7 @@ use Swoole\Coroutine\Http\Server;
 run(function() {
     $server = new Server("127.0.0.1", 9502);
     $server->set(['websocket_compression' => true]);
-    $server->handle('/', function ($request, $response) use ($data1, $data2, $data3) {
+    $server->handle('/', function ($request, $response) {
         $response->upgrade();
         $data1 = bin2hex(random_bytes(10 * 1024));
         $data2 = bin2hex(random_bytes(20 * 2048));
@@ -514,6 +517,9 @@ run(function() {
     $client = new Client('127.0.0.1', 9502);
     $client->set(['websocket_compression' => true]);
     $ret = $client->upgrade('/');
+    $data1 = bin2hex(random_bytes(10 * 1024));
+    $data2 = bin2hex(random_bytes(20 * 2048));
+    $data3 = bin2hex(random_bytes(40 * 4096));
     $context = deflate_init(ZLIB_ENCODING_RAW);
     $client->push(deflate_add($context, $data1, ZLIB_NO_FLUSH), SWOOLE_WEBSOCKET_OPCODE_TEXT, SWOOLE_WEBSOCKET_FLAG_COMPRESS | SWOOLE_WEBSOCKET_FLAG_RSV1);
     $client->push(deflate_add($context, $data2, ZLIB_NO_FLUSH), SWOOLE_WEBSOCKET_OPCODE_CONTINUATION, 0);
@@ -526,7 +532,7 @@ run(function() {
 - `Swoole\Coroutine::cancel()` 新增 `$throw_exception` 参数，支持在取消协程时抛出异常。
 - `Swoole\Coroutine\Http\Client` 与 `Swoole\Coroutine\Http\Server` 现已支持接收 WebSocket 分块消息。
 - 为 `Swoole\Coroutine\Http\Client` 和 `Swoole\Coroutine\Http\Server` 新增 `disconnect` 与 `ping` 方法。
-- 重构`Swoole\Coroutine\Lock`，`Swoole\Lock`和，`Swoole\Thread\Lock`，只保留`__construct`，`lock`和`unlock`方法，使用上更加贴近`php flock`。
+- 重构`Swoole\Coroutine\Lock`、`Swoole\Lock`和`Swoole\Thread\Lock`，只保留`__construct`，`lock`和`unlock`方法，使用上更加贴近`php flock`。
 
 ### 问题修复
 - 修复 `Swoole\Websocket\Server` 在握手失败或连接关闭后，仍可能触发 `onMessage` 回调的问题。
@@ -588,6 +594,9 @@ $lock->unlock();
 
 ### 取消协程
 ```php
+use Swoole\Coroutine as Co;
+use Swoole\Coroutine\System;
+
 Co\run(function () {
     $cid = Co\go(function () {
         try {
@@ -616,7 +625,7 @@ Co\run(function () {
 use Swoole\WebSocket\Server;
 use Swoole\WebSocket\Frame;
 
-$server = Server('127.0.0.1', 9502);
+$server = new Server('127.0.0.1', 9502);
 $server->set(['websocket_compression' => true]);
 $server->on('message', function (Server $server, Frame $frame) {
     $data1 = bin2hex(random_bytes(10 * 1024));
@@ -638,7 +647,7 @@ use Swoole\Coroutine\Http\Server;
 run(function() {
     $server = new Server("127.0.0.1", 9502);
     $server->set(['websocket_compression' => true]);
-    $server->handle('/', function ($request, $response) use ($data1, $data2, $data3) {
+    $server->handle('/', function ($request, $response) {
         $response->upgrade();
         $data1 = bin2hex(random_bytes(10 * 1024));
         $data2 = bin2hex(random_bytes(20 * 2048));
@@ -660,6 +669,9 @@ run(function() {
     $client = new Client('127.0.0.1', 9502);
     $client->set(['websocket_compression' => true]);
     $ret = $client->upgrade('/');
+    $data1 = bin2hex(random_bytes(10 * 1024));
+    $data2 = bin2hex(random_bytes(20 * 2048));
+    $data3 = bin2hex(random_bytes(40 * 4096));
     $context = deflate_init(ZLIB_ENCODING_RAW);
     $client->push(deflate_add($context, $data1, ZLIB_NO_FLUSH), SWOOLE_WEBSOCKET_OPCODE_TEXT, SWOOLE_WEBSOCKET_FLAG_COMPRESS | SWOOLE_WEBSOCKET_FLAG_RSV1);
     $client->push(deflate_add($context, $data2, ZLIB_NO_FLUSH), SWOOLE_WEBSOCKET_OPCODE_CONTINUATION, 0);
@@ -696,7 +708,7 @@ run(function() {
     - 修复当系统没有`zlib`时，处理客户端`Accept-Encoding: zlib`请求头会触发未知压缩方法警告的问题。
 
 ### 废弃
-- 不再支持`select`事件机制，`select`仅支持`1024`个句柄的事件监听，存在严重缺陷，在不支持`epoll/kqueue`的平台将使用`poll`作为事件轮训机制，这使得`Cygwin`平台下也可以支持大量并发。
+- 不再支持`select`事件机制，`select`仅支持`1024`个句柄的事件监听，存在严重缺陷，在不支持`epoll/kqueue`的平台将使用`poll`作为事件轮询机制，这使得`Cygwin`平台下也可以支持大量并发。
 - 在`Swoole\Server::stop()`方法中，第二个参数`$waitEvent`已被废弃，请使用`reload_async`参数。
 
 ### 架构优化
@@ -715,7 +727,7 @@ run(function() {
 - 增加`aarch64`和`macOS`环境下的单元测试。
 - 优化底层客户端网络地址解析和设置。
 - 为 `Server`模块增加`ssl_cafile/ssl_capath`配置项。
-- 增加`print_backtrace_on_error`配置，此配置可以在发生位置错误时候，打印C函数的堆栈。
+- 增加`print_backtrace_on_error`配置，此配置可以在发生未知错误时候，打印C函数的堆栈。
 - 增加`Address Sanitizer`调试工具。
 - 增加`Cygwin`测试，显著提升`Cygwin`平台下的兼容性和稳定性
 - 在 `macOS` 系统中，由于 `kqueue` 事件机制不支持跨进程管道事件监听，导致无法使用 `SWOOLE_PROCESS` 模式和 `Task` 进程功能。因此，系统将默认采用 `poll` 作为底层事件机制。如需启用 `kqueue`，可以通过`Swoole\Server::set(['enable_kqueue' => true])`和`swoole_async_set(['enable_kqueue' => true])`方法手动开启。
@@ -749,7 +761,7 @@ run(function() {
 - 修复`SWOOLE_THREAD`模式下，心跳检测不起作用的问题。
 
 ### 注意：
-- 在Http服务中，如果进程重启时，底层会发送500 Internal Server给队列中等待处理的请求，发送完毕就关闭连接并丢弃这些请求。
+- 在Http服务中，如果进程重启时，底层会发送500 Internal Server Error给队列中等待处理的请求，发送完毕就关闭连接并丢弃这些请求。
 - 由于php底层的`stream factory`和`stream ops`依赖的运行时配置不是线程安全的，因此多线程模式下只允许主线程在还没创建子线程之前修改这些运行时配置。
 - 升级nghttp2到最新版本。
 
@@ -792,9 +804,9 @@ run(function() {
 - 文件异步引擎`iouring`支持多线程轮询模式`IORING_SETUP_SQPOLL`。 @NathanFreeman
 - 新增`iouring_workers`修改`iouring`线程数。 @NathanFreeman
 - 新增`iouring_flags`支持修改`iouring`工作模式。 @NathanFreeman
-- 增加`Swoole\Thead\Barrier`多线程同步屏障。@matyhtf
+- 增加`Swoole\Thread\Barrier`多线程同步屏障。@matyhtf
 - 增加新的设置cookie的函数。 @matyhtf @NathanFreeman
-- 新增`非阻塞，可重入的互斥协程锁”，该锁可以在进程间/线程间使用，且不会阻塞进程/线程。 @NathanFreeman
+- 新增`非阻塞，可重入的互斥协程锁`，该锁可以在进程间/线程间使用，且不会阻塞进程/线程。 @NathanFreeman
 - `Swoole\Coroutine\Socket::getOption()`支持了`TCP_INFO`选项。 @matyhtf
 - `Swoole\Client`同步阻塞客户端支持`http`代理。 @matyhtf
 - 新增异步非阻塞的`TCP/UDP/Unixsocket` 客户端`Swoole\Async\Client`。 @matyhtf
@@ -909,7 +921,7 @@ run(function() {
 - 文件异步引擎`iouring`支持多线程轮询模式`IORING_SETUP_SQPOLL`。 @NathanFreeman
 - 新增`iouring_workers`修改`iouring`线程数。 @NathanFreeman
 - 新增`iouring_flags`支持修改`iouring`工作模式。 @NathanFreeman
-- 增加`Swoole\Thead\Barrier`多线程同步屏障。@matyhtf
+- 增加`Swoole\Thread\Barrier`多线程同步屏障。@matyhtf
 - 增加新的设置cookie的函数。 @matyhtf @NathanFreeman
 
 ### Bug修复：
@@ -1060,7 +1072,7 @@ run(function() {
 ### 修复
 - 修复`WebSocket`协程客户端每次请求造成的内存泄漏
 - 修复`http协程服务端`优雅退出导致客户端不退出的问题
-- 修复编译的时候加入了`--enable-thread-context`选项会导致`Process::signal()`不起作
+- 修复编译的时候加入了`--enable-thread-context`选项会导致`Process::signal()`不起作用
 - 修复在`SWOOLE_BASE`模式下，当进程非正常退出时，连接数统计错误的问题
 - 修复`stream_select()`函数签名错误
 - 修复文件MIME信息大小写敏感错误
@@ -1082,7 +1094,7 @@ run(function() {
 - 添加了`--with-nghttp2_dir`选项，用于使用系统中的`nghttp2`库
 - 支持字节长度或大小相关的选项
 - 增加`Process\Pool::sendMessage()`函数
-- `Http\Response:cookie()`支持`max-age`
+- `Http\Response::cookie()`支持`max-age`
 
 ### 修复
 - 修复`Server task/pipemessage/finish`事件导致内存泄漏
@@ -1102,10 +1114,10 @@ run(function() {
 - 调整了`Coroutine\Socket::recvLine/recvWithBuffer`方法的`length`参数的默认值为`65536`
 - 重构了跨协程退出特性，使内存释放更安全，并解决了致命错误发生时的崩溃问题
 - 为`Coroutine\Client`、`Coroutine\Http\Client`、`Coroutine\Http2\Client`添加了`socket`属性，允许直接操作`socket`资源
-- 持`Http\Server`向`http2`客户端发送空文件
+- 支持`Http\Server`向`http2`客户端发送空文件
 - 支持`Coroutine\Http\Server`的优雅重启。当服务器关闭时，客户端连接不再被强制关闭，只停止监听新请求
 - 将`pcntl_rfork`和`pcntl_sigwaitinfo`添加到不安全函数列表中，在协程容器启动时将被关闭
-- 重构了`SWOOLE_BASE`模式进程管理器，关闭和重载行为将`SWOOLE_PROCESS`一致
+- 重构了`SWOOLE_BASE`模式进程管理器，关闭和重载行为与`SWOOLE_PROCESS`一致
 
 ##  v5.0.1
 
@@ -1205,7 +1217,7 @@ run(function() {
 
 ### 增强
 
-- 支持 `Http2` 服务器下的 `http_auto_index` 选项
+- 支持 `Http2` 服务器下的 `http_autoindex` 选项
 
 ### 修复
 
@@ -1287,7 +1299,7 @@ run(function() {
 - 修复 Manager 进程中无法正常关闭连接的问题
 - 修复 Manager 进程无法使用 sendMessage 的问题
 - 修复 `Coroutine\Http\Server` 接收超大 POST 数据解析异常的问题
-- 修复 PHP8 环境下致命错误时进行不能直接退出的问题
+- 修复 PHP8 环境下致命错误时进程不能直接退出的问题
 - 调整 coroutine `max_concurrency` 配置项，只允许在 `Co::set()` 中使用
 - 调整 `Coroutine::join()` 忽略不存在的协程
 
@@ -1532,13 +1544,13 @@ run(function() {
 
 ### 新增 API
 
-- 新增 `Http\Request\getMethod()` 方法 (#3987) (@luolaifa000)
+- 新增 `Http\Request::getMethod()` 方法 (#3987) (@luolaifa000)
 - 新增 `Coroutine\Socket->recvLine()` 方法 (#4014) (@matyhtf)
-- 新增 `Coroutine\Socket->readWithBuffer()` 方法 (#4017) (@matyhtf)
+- 新增 `Coroutine\Socket->recvWithBuffer()` 方法 (#4017) (@matyhtf)
 
 ### 增强
 
-- 增强 `Response\create()` 方法，可以独立于 Server 使用 (#3998) (@matyhtf)
+- 增强 `Response::create()` 方法，可以独立于 Server 使用 (#3998) (@matyhtf)
 - 支持 `Coroutine\Redis->hExists` 在设置了 compatibility_mode 之后返回 bool 类型 (swoole/swoole-src@b8cce7c) (@matyhtf)
 - 支持 `socket_read` 设置 PHP_NORMAL_READ 选项 (swoole/swoole-src@b1a0dcc) (@matyhtf)
 
@@ -1800,7 +1812,7 @@ $http->start();
 
 ### 向下不兼容改动
 
-- SWOOLE_HOOK_ALL 包括 SWOOlE_HOOK_CURL (#3606) (@matyhtf)
+- SWOOLE_HOOK_ALL 包括 SWOOLE_HOOK_CURL (#3606) (@matyhtf)
 - 移除 ssl_method，增加 ssl_protocols (#3639) (@Yurunsoft)
 
 ### 新增 API
@@ -2117,7 +2129,7 @@ $http->start();
 ### 增强
 
 - 提升 SSL 服务器的性能 (#3077) (85a9a595) (@matyhtf)
-- 移除 HTTP 头大小限制 (#3187) limitation (@twose)
+- 移除 HTTP 头大小限制 (#3187) (@twose)
 - 支持 MIPS (#3196) (@ekongyun)
 - 支持 CURLOPT_HTTPAUTH (swoole/library@570318be) (@twose)
 

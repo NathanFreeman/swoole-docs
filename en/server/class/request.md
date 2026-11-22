@@ -210,7 +210,7 @@ $http->start();
 ### getContent
 
 - Gets the raw HTTP request body, mainly used to handle `POST` request types other than `application/x-www-form-urlencoded` (such as `application/json`, `text/xml`, etc.).
-- This method is equivalent to `fopen('php://input')` in PHP.
+- This method is equivalent to `file_get_contents('php://input')` in PHP.
 
 ```php
 Swoole\Http\Request->getContent(): string|false

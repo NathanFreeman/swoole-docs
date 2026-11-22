@@ -141,10 +141,15 @@ $server->on('receive', function(Server $server, int $fd, int $reactorId, string 
 });
 
 $server->start();
+```
+
+```php
+<?php
+use Swoole\Server;
 
 // 示例二：UDP 服务
 $server = new Server('127.0.0.1', 9501, SWOOLE_BASE, SWOOLE_UDP);
-$server->on('receive', function(Server $server, int $fd, int $reactorId, string $data) {
+$server->on('packet', function(Server $server, string $data, array $clientInfo) {
   echo "服务器类型：" . $server->type . PHP_EOL;
 });
 
@@ -239,7 +244,7 @@ $server->start();
 ```
 
 > [!TIP]
-> 该属性返回以下值之一：[`SWOOLE_BASE`](/zh/server/process_thread.html#swoole-base) — 单进程模式，[`SWOOLE_PROCESS`](/zh/server/process_thread.html#swoole-process) — 多进程模式，[`SWOOLE_THREAD`](/zh/server/process_thread.html#swoole-thread) — 多线程模式。
+> 该属性返回以下值之一：[`SWOOLE_BASE`](/zh/server/process_thread.html#swoole-base) — 多进程模式（无 master 进程），[`SWOOLE_PROCESS`](/zh/server/process_thread.html#swoole-process) — 多进程模式，[`SWOOLE_THREAD`](/zh/server/process_thread.html#swoole-thread) — 多线程模式。
 
 ### master_pid
 

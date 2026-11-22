@@ -183,7 +183,7 @@ Swoole\Atomic->wait(float $timeout = 1.0): bool
 > `Swoole\Atomic\Long` and `Swoole\Thread\Atomic\Long` do not have the `wait` method.
 
 > [!DANGER]
-> `Swoole\Atomic->wakeup()` blocks the entire process rather than the coroutine, so do not use `Swoole\Atomic->wakeup()` in a coroutine environment to avoid suspending the process.
+> `Swoole\Atomic->wait()` blocks the entire process rather than the coroutine, so do not use `Swoole\Atomic->wait()` in a coroutine environment to avoid suspending the process.
 
 ## wakeup
 - Wakes up other processes that are sleeping. This method is used together with [`Swoole\Atomic->wait()`](#wait) and is commonly used for multi-process synchronization.
@@ -195,7 +195,7 @@ Swoole\Atomic->wakeup(int $count = 1): bool
 * **Parameters**
     * **`int $count`**
         * **Description**: The number of processes to wake up
-        * **Default**: None
+        * **Default**: 1
         * **Other values**: None
 * **Return value**
     * Returns `true` on success, `false` on failure.

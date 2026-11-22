@@ -46,7 +46,7 @@ public function listen(int $backlog = 512): bool
 |:---|:---|:---|
 | `$backlog` | 监听队列的长度【系统底层使用 `epoll` 实现了异步 `IO`，不存在阻塞，因此 `backlog` 的重要程度并不高】 | `512` |
 
-**返回值**：绑定成功返回 `true`；绑定失败返回 `false`，请检查 `errCode` 属性获取失败原因。
+**返回值**：监听成功返回 `true`；监听失败返回 `false`，请检查 `errCode` 属性获取失败原因。
 
 > [!WARNING]
 > 如果应用中存在阻塞或耗时逻辑，`accept` 接受连接不及时，新创建的连接就会堆积在 `backlog` 监听队列中，如超出 `backlog` 长度，服务就会拒绝新的连接进入
@@ -351,7 +351,7 @@ public function sendto(string $address, int $port, string $data): int|false
 **返回值**：发送成功返回发送的字节数；发送失败返回 `false`，并设置 `errCode` 属性。
 
 > [!TIP]
-> 此方法没有协程调度，底层会立即调用 `sendto` 向目标主机发送数据。此方法不会监听可写，`sendto` 可能会因为缓存区已满而返会
+> 此方法没有协程调度，底层会立即调用 `sendto` 向目标主机发送数据。此方法不会监听可写，`sendto` 可能会因为缓存区已满而返回
 > `false`，需要自行处理，或者使用 `send` 方法。
 
 ### setOption
@@ -413,7 +413,7 @@ public function setProtocol(array $settings): bool
 | [package_eof](/zh/server/setting.html#package-eof)                     | 设置数据包指定分隔符                                                                              |
 | [package_length_type](/zh/server/setting.html#package-length-type)     | 指定长度字段的类型（如 'N' 表示 4 字节无符号长整型）。与 `PHP` 的 `pack` 函数一样。告诉服务器：长度字段占几个字节，以及这些字节的排列顺序（字节序）。  |
 | [package_length_offset](/zh/server/setting.html#package-length-offset) | 定位长度字段位置的核心参数。它告诉服务器：“长度字段这个值，存放在整个数据包的第几个字节”                                           |
-| [package_body_offset](/zh/server/setting.html#package-body-offset-package-body-start)     | 位包体数据起始位置的偏移量。告诉服务器：真正的业务数据（包体）从数据包的第几个字节开始。                                            |
+| [package_body_offset](/zh/server/setting.html#package-body-offset-package-body-start)     | 为包体数据起始位置的偏移量。告诉服务器：真正的业务数据（包体）从数据包的第几个字节开始。                                            |
 | [package_length_func](/zh/server/setting.html#package-length-func)     | 自定义一个 `PHP` 函数来告诉 `Swoole`一个完整数据包究竟有多长。                                                 |
 | [package_max_length](/zh/server/setting.html#package-max-length)       | 设置能接收的最大数据包尺寸，单位为字节。默认值：`2M` 即 `2 * 1024 * 1024`，最小值为`64K`。                             |
 

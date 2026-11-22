@@ -59,7 +59,7 @@ public int $flags
 > `flags` returns one of the following types:
 >
 > - `SWOOLE_TASK_NOREPLY | SWOOLE_TASK_NONBLOCK` means this was not sent from a `worker` process to a `task` process; in this case, calling [`Swoole\Server::finish()`](/en/server/methods.html#finish) in the `task` event will emit a warning.
-> - `SWOOLE_TASK_CALLBACK | SWOOLE_TASK_NONBLOCK` means the last callback parameter of `Swoole\Server::finish()` is not `null`; the `finish` event will not be executed, and only this callback will run.
+> - `SWOOLE_TASK_CALLBACK | SWOOLE_TASK_NONBLOCK` means the last callback parameter of `Swoole\Server::task()` is not `null`; the `finish` event will not be executed, and only this callback will run.
 > - `SWOOLE_TASK_COROUTINE | SWOOLE_TASK_NONBLOCK` means the task will be handled in coroutine form.
 > - `SWOOLE_TASK_NONBLOCK` is the default value, when none of the above three cases applies.
 

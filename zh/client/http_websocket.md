@@ -90,7 +90,7 @@ public array $requestHeaders;
 当前 `HTTP` 客户端请求包体。
 
 ```php
-public array $requestBody;
+public string $requestBody;
 ```
 
 ### uploadFiles
@@ -103,10 +103,10 @@ public array $uploadFiles;
 
 ### downloadFile
 
-从服务端下载的文件。
+从服务端下载的文件在本地的保存路径。
 
 ```php
-public array $downloadFile;
+public string $downloadFile;
 ```
 
 ### downloadOffset
@@ -130,7 +130,7 @@ public int $statusCode;
 `HTTP` 服务端的响应头。
 
 ```php
-public array headers;
+public array $headers;
 ```
 
 ### set_cookie_headers
@@ -322,9 +322,8 @@ run(function() {
     foreach ($clients as $cli) {
         $cli->recv();      // 等待并接收响应
         $results[] = $cli->body;
+        $cli->close();
     }
-    
-    $client->close();
 });
 ```
 
@@ -382,7 +381,7 @@ public function setBasicAuth(string $username, string $password): void
 | `$username` | `HTTP Basic Auth` 的用户名 | 必填 |
 | `$password` | `HTTP Basic Auth` 的密码 | 必填 |
 
-**返回值**：操作成功返回 `true`，操作失败返回 `false`。
+**返回值**：无返回值。
 
 **示例**
 
@@ -541,7 +540,7 @@ run(function() {
 `HTTP` 客户端中用于上传内存数据的方法，与 `addFile` 类似，但它允许将 `字符串内容` 作为 `虚拟文件` 进行上传（支持 `multipart/form-data` 格式）
 
 ```php
-public function addData(string $data, string $name, ?string $type = null, ?string $filename = null, int $offset = 0, int $length = 0): bool
+public function addData(string $data, string $name, ?string $type = null, ?string $filename = null): bool
 ```
 
 | 参数 | 说明 | 默认值 |
@@ -567,7 +566,7 @@ run(function() {
     $imageData = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==');
     
     // 将内存数据作为文件上传
-    $client->addData($imageData, 'test.png', 'image_file', 'image/png');
+    $client->addData($imageData, 'image_file', 'image/png', 'test.png');
     
     // 发起 POST 请求
     $client->post('/upload.php', []);
@@ -921,7 +920,7 @@ run(function() {
 public function getCookies(): null|array|false
 ```
 
-**返回值**：操作成功返回一个数组，里面包含 `HTTP` 响应的头信息，操作失败返回 `false`。
+**返回值**：操作成功返回一个数组，里面包含服务器返回的 `Cookie` 键值对，操作失败返回 `false`。
 
 **示例**
 
@@ -1190,9 +1189,8 @@ run(function() {
     foreach ($clients as $cli) {
         $cli->recv();      // 等待并接收响应
         $results[] = $cli->body;
+        $cli->close();
     }
-    
-    $client->close();
 });
 ```
 
@@ -1337,6 +1335,7 @@ public function disconnect(int $code = SWOOLE_WEBSOCKET_CLOSE_NORMAL, string $re
 ```php
 <?php
 use Swoole\Coroutine\Http\Client;
+use Swoole\Coroutine;
 use function Swoole\Coroutine\run;
 
 run(function() {

@@ -218,9 +218,6 @@ mosquitto_pub -h 127.0.0.1 -t 'room/1/temperature' -q 1 -m '26.5'
 
 订阅端会打印 `room/1/temperature 26.5`，服务端会打印 `CONNECT`、`SUBSCRIBE`、`PUBLISH` 三条日志。
 
-> [!NOTE]
-> 本例只演示报文解析，不回复 `CONNACK`，真实客户端无法完成连接。需要可直接使用的 Broker 请参考上面的零依赖示例。
-
 ## 注意事项
 
 > [!IMPORTANT]

@@ -227,7 +227,7 @@ run(function () {
 协程化 `sleep`、`usleep`、`time_nanosleep` 和 `time_sleep_until` 这些睡眠函数。
 
 > [!NOTE]
-> 由于底层的定时器最小粒度是 `1ms`，因此使用 `usleep` 等高精度睡眠函数时，如果设置为低于 `1ms`，将直接使用 `sleep 系统调用`。可能会引起非常短暂的睡眠阻塞。
+> 由于底层的定时器最小粒度是 `1ms`，因此使用 `usleep` 等高精度睡眠函数时，如果设置为低于 `1ms`，将直接使用 `usleep 系统调用`。可能会引起非常短暂的睡眠阻塞。
 
 **示例**
 
@@ -353,7 +353,7 @@ run(function () {
         fwrite($pipes[0], 'I am process');
         fclose($pipes[0]);
 
-        while (true) {
+        while (!feof($pipes[1])) {
             echo fread($pipes[1], 1024);
         }
 

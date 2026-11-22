@@ -425,9 +425,9 @@ $server->start();
 | worker_response_count | The number of responses from the current worker process |
 | worker_dispatch_count | The count of tasks delivered by the master process to the current worker process; incremented when the [master process](/en/server/process_thread.html#processes-threads) performs dispatch |
 | task_idle_worker_num | The number of idle task processes |
-| tasking_num | The number of task processes currently working |
+| tasking_num | The number of tasks currently being processed |
 | coroutine_num | The current number of coroutines |
-| coroutine_peek_num | The total number of coroutines |
+| coroutine_peak_num | The historical peak number of coroutines |
 | task_queue_num | The number of tasks in the message queue |
 | task_queue_bytes | The memory usage of the message queue in bytes |
 
@@ -835,11 +835,10 @@ public function taskCo(array $tasks, float $timeout = 0.5): array|false
 
 ```php
 <?php
-use Swoole\Server;
-use Swoole\Http\HttpServer;
+use Swoole\Http\Server;
 use Swoole\Http\Request;
 use Swoole\Http\Response;
-$server = new HttpServer("127.0.0.1", 9502, SWOOLE_BASE);
+$server = new Server("127.0.0.1", 9502, SWOOLE_BASE);
 
 $server->set([
     'worker_num'      => 1,
@@ -1107,7 +1106,7 @@ Gets the [number](/en/server/setting.html#worker-num) of the current [worker pro
 public function getWorkerId(): int|false
 ```
 
-**Return value**: Returns `false` if the process does not exist; otherwise returns the process `PID`.
+**Return value**: Returns `false` if the process does not exist; otherwise returns the process number.
 
 ## getWorkerPid
 
@@ -1412,7 +1411,8 @@ public function isEstablished(int $fd): bool
 
 ```php
 <?php
-use Swoole\Websocket\Server;
+use Swoole\WebSocket\Server;
+use Swoole\WebSocket\Frame;
 $server = new Server('127.0.0.1', 9502);
 $server->on('message', function(Server $server, Frame $frame) {
     var_dump($server->isEstablished($frame->fd));
@@ -1440,8 +1440,10 @@ public static function pack(Swoole\WebSocket\Frame|string $data, int $opcode = S
 |:---|:---|:---|
 | `$data` | The message content | Required |
 | `$opcode` | Specifies the format of the data content to send; text by default. To send binary content, the `$opcode` parameter must be set to `SWOOLE_WEBSOCKET_OPCODE_BINARY`. Other value: `SWOOLE_WEBSOCKET_OPCODE_BINARY` | `SWOOLE_WEBSOCKET_OPCODE_TEXT` |
-| `bool $finish` | Whether the frame is finished. Since `v4.4.12`, the `finish` parameter (`bool` type) was changed to the `flags` parameter (`int` type) to support `WebSocket` compression. `finish` corresponds to `SWOOLE_WEBSOCKET_FLAG_FIN` with a value of `1`; the original `bool` values are implicitly converted to `int`, so this change is backward compatible with no impact | Required |
-| `bool $mask` | Whether to set a mask; this parameter was removed in `v4.4.12` | Required |
+| `$flags` | Frame flags; `SWOOLE_WEBSOCKET_FLAG_FIN` indicates the frame is finished, with a value of `1` | `SWOOLE_WEBSOCKET_FLAG_FIN` |
+
+> [!NOTE]
+> Since `v4.4.12`, the `finish` parameter (`bool` type) was changed to the `flags` parameter (`int` type) to support `WebSocket` compression; the original `bool` values are implicitly converted to `int`, so this change is backward compatible with no impact. The `mask` parameter was removed in `v4.4.12`.
 
 **Return value**: On success, returns the packed `WebSocket` packet; on failure, returns an empty string.
 
@@ -1622,12 +1624,12 @@ function(int $fd, array $data)
 use Swoole\Redis\Server;
 $server = new Server("127.0.0.1", 9501, SWOOLE_BASE);
 $server->set(['worker_num' => 1]);
-$server->setHandler('get', function(int $fd, string $data) use ($server) {
-    if (!$data[0]) {
+$server->setHandler('get', function(int $fd, array $data) use ($server) {
+    if (count($data) == 0) {
         // String data returned via return is sent to the redis client by the underlying layer
         return Server::format(Server::ERROR, "ERR wrong number of arguments for 'GET' command");
     }
-    // When a get command is sent from a redis client, the server returns hello world
+    // When a get command is sent from a redis client, the server returns hello
     $server->send($fd, Server::format(Server::STRING, "hello"));
 });
 $server->start();
@@ -1678,11 +1680,11 @@ public static function format(int $type, mixed $value = null): false|string
 use Swoole\Redis\Server;
 $server = new Server("127.0.0.1", 9501, SWOOLE_BASE);
 $server->set(['worker_num' => 1]);
-$server->setHandler('get', function(int $fd, string $data) use ($server) {
-    if (!$data[0]) {
+$server->setHandler('get', function(int $fd, array $data) use ($server) {
+    if (count($data) == 0) {
         return Server::format(Server::ERROR, "ERR wrong number of arguments for 'GET' command");
     }
-    // When a get command is sent from a redis client, the server returns hello world
+    // When a get command is sent from a redis client, the server returns hello
     $server->send($fd, Server::format(Server::STRING, "hello"));
 });
 $server->start();

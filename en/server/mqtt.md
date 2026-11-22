@@ -218,9 +218,6 @@ mosquitto_pub -h 127.0.0.1 -t 'room/1/temperature' -q 1 -m '26.5'
 
 The subscriber prints `room/1/temperature 26.5`, and the server prints three log lines: `CONNECT`, `SUBSCRIBE`, and `PUBLISH`.
 
-> [!NOTE]
-> This example only demonstrates packet parsing and does not reply with `CONNACK`, so real clients cannot complete the connection. For a ready-to-use Broker, refer to the zero-dependency example above.
-
 ## Notes
 
 > [!IMPORTANT]

@@ -60,7 +60,7 @@ Open another terminal and connect to the server using `nc`:
 echo "Hello" | nc -u 127.0.0.1 9502
 ```
 
-After connecting successfully, type any characters and press Enter; the server returns a response:
+After the command sends the data, the server returns a response:
 
 ```
 Hello World

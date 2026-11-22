@@ -227,7 +227,7 @@ $server->start();
 > - There is no coroutine environment at this point; if you really need coroutine APIs, you must manually call `Co\run` to create a [coroutine container](/en/coroutine/container.html).
 
 > [!TIP]
-> If [enable_coroutine](/en/server/setting.html#enable-coroutine) is `true`, the underlying layer creates a coroutine to execute the `shutdown` event.
+> Even if [enable_coroutine](/en/server/setting.html#enable-coroutine) is `true`, the underlying layer does not create a coroutine to execute the `shutdown` event, because the coroutine environment has already been destroyed at this point.
 
 ## workerStart
 
@@ -525,7 +525,7 @@ function (Swoole\Server $server, int $taskId, int $workerId, mixed $data) {}
 | Parameter | Description | Default |
 |:---|:---|:---|
 | `$server` | Swoole\Server object | Required |
-| `$taskId` | Index of the `task` process executing the task; globally unique only when combined with `$workerId` | Required |
+| `$taskId` | The ID of the task; globally unique only when combined with `$workerId` | Required |
 | `$workerId` | Index of the `worker` process that dispatched the task; tasks dispatched by different `worker` processes may have the same ID | Required |
 | `$data` | Data content of the task | Required |
 
@@ -575,7 +575,7 @@ function (Swoole\Server $server, int $taskId, mixed $data) {}
 | Parameter | Description | Default |
 |:---|:---|:---|
 | `$server` | Swoole\Server object | Required |
-| `$taskId` | Index of the `task` process that executed the task | Required |
+| `$taskId` | The ID of the task | Required |
 | `$data` | Result content of the task processing | Required |
 
 **Example**
@@ -1242,7 +1242,7 @@ $server->on('pipeMessage', function (Server $serv, PipeMessage $msg) {
 
 // 6. Worker error event: receives a StatusInfo object
 $server->on('workerError', function (Server $serv, StatusInfo $info) {
-    // $info->worker_id, $info->error_type, $info->errno, etc.
+    // $info->worker_id, $info->worker_pid, $info->exit_code, $info->signal, etc.
     var_dump($info);
 });
 
@@ -1290,7 +1290,10 @@ $server->on('receive', function(Server $server, int $fd, int $reactorId, string 
 });
 
 $server->start();
+```
 
+```php
+<?php
 // Example 2: a UDP server must listen for the packet event
 use Swoole\Server;
 $server = new Server('127.0.0.1', 9501, SWOOLE_PROCESS, SWOOLE_SOCK_UDP);
@@ -1300,7 +1303,10 @@ $server->on('packet', function (Server $server, mixed $data, array $clientInfo) 
 });
 
 $server->start();
+```
 
+```php
+<?php
 // Example 3: an HTTP server must listen for the request event
 use Swoole\Http\Server;
 use Swoole\Http\Request;
@@ -1312,8 +1318,10 @@ $server->on('request', function(Request $request, Response $response) {
 });
 
 $server->start();
+```
 
-
+```php
+<?php
 // Example 4: a WebSocket server must listen for the message event
 use Swoole\WebSocket\Server;
 use Swoole\WebSocket\Frame;
@@ -1324,8 +1332,10 @@ $server->on('message', function (Server $server,  Frame $frame) {
 });
 
 $server->start();
+```
 
-
+```php
+<?php
 // Example 5: when task processes are enabled, the task and finish events must be registered
 use Swoole\Http\Server;
 use Swoole\Http\Request;

@@ -227,7 +227,7 @@ $server->start();
 > - 此时已没有协程环境，若确实要用协程 API，必须手动调用 `Co\run` 创建[协程容器](/zh/coroutine/container.html)。
 
 > [!TIP]
-> 如果 [enable_coroutine](/zh/server/setting.html#enable-coroutine) 为 `true`，底层会创建协程来执行 `shutdown` 事件。
+> 即使 [enable_coroutine](/zh/server/setting.html#enable-coroutine) 为 `true`，底层也不会创建协程来执行 `shutdown` 事件，此时协程环境已被销毁。
 
 ## workerStart
 
@@ -525,7 +525,7 @@ function (Swoole\Server $server, int $taskId, int $workerId, mixed $data) {}
 | 参数 | 说明 | 默认值 |
 |:---|:---|:---|
 | `$server` | Swoole\Server 对象 | 必填 |
-| `$taskId` | 执行任务的 `task` 进程序号，需与 `$workerId` 组合起来才全局唯一 | 必填 |
+| `$taskId` | 任务的 ID，需与 `$workerId` 组合起来才全局唯一 | 必填 |
 | `$workerId` | 投递任务的 `worker` 进程序号，不同 `worker` 进程投递的任务 ID 可能相同 | 必填 |
 | `$data` | 任务的数据内容 | 必填 |
 
@@ -575,7 +575,7 @@ function (Swoole\Server $server, int $taskId, mixed $data) {}
 | 参数 | 说明 | 默认值 |
 |:---|:---|:---|
 | `$server` | Swoole\Server 对象 | 必填 |
-| `$taskId` | 执行任务的 `task` 进程序号 | 必填 |
+| `$taskId` | 任务的 ID | 必填 |
 | `$data` | 任务处理的结果内容 | 必填 |
 
 **示例**
@@ -1242,7 +1242,7 @@ $server->on('pipeMessage', function (Server $serv, PipeMessage $msg) {
 
 // 6. worker 错误事件：接收 StatusInfo 对象
 $server->on('workerError', function (Server $serv, StatusInfo $info) {
-    // $info->worker_id, $info->error_type, $info->errno 等
+    // $info->worker_id, $info->worker_pid, $info->exit_code, $info->signal 等
     var_dump($info);
 });
 
@@ -1290,7 +1290,10 @@ $server->on('receive', function(Server $server, int $fd, int $reactorId, string 
 });
 
 $server->start();
+```
 
+```php
+<?php
 // 例2：UDP服务器必须监听packet事件
 use Swoole\Server;
 $server = new Server('127.0.0.1', 9501, SWOOLE_PROCESS, SWOOLE_SOCK_UDP);
@@ -1300,7 +1303,10 @@ $server->on('packet', function (Server $server, mixed $data, array $clientInfo) 
 });
 
 $server->start();
+```
 
+```php
+<?php
 // 例3：HTTP服务器必须监听request事件
 use Swoole\Http\Server;
 use Swoole\Http\Request;
@@ -1312,8 +1318,10 @@ $server->on('request', function(Request $request, Response $response) {
 });
 
 $server->start();
+```
 
-
+```php
+<?php
 // 例4：WebSocket服务器必须监听message事件
 use Swoole\WebSocket\Server;
 use Swoole\WebSocket\Frame;
@@ -1324,8 +1332,10 @@ $server->on('message', function (Server $server,  Frame $frame) {
 });
 
 $server->start();
+```
 
-
+```php
+<?php
 // 例5：启用task进程时候，必须监听task和finish事件
 use Swoole\Http\Server;
 use Swoole\Http\Request;

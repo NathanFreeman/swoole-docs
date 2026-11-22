@@ -55,12 +55,12 @@ public function __construct(int $table_size, float $conflict_proportion = 0.2)
 
 | Parameter | Description | Default |
 |:---|:---|:---|
-| `$size` | Specifies the maximum number of rows of the table. If `$size` is not a power of `2`, such as `1024`, `8192`, `65536`, etc., the underlying layer automatically adjusts it to a nearby number. If it is less than `1024`, it defaults to `1024`, i.e., `1024` is the minimum. Starting from `v4.4.6`, the minimum is `64`. | Required |
+| `$size` | Specifies the maximum number of rows of the table. If `$size` is not a power of `2`, such as `1000`, `5000`, `60000`, etc., the underlying layer automatically adjusts it to a nearby number. If it is less than `1024`, it defaults to `1024`, i.e., `1024` is the minimum. Starting from `v4.4.6`, the minimum is `64`. | Required |
 | `$conflictProportion` | The maximum proportion of hash conflicts. Other values: minimum `0.2`, maximum `1` | `0.2` (i.e., `20%`) |
 
 **Capacity calculation**
 
-- If `$size` is not a power of `2`, such as `1024`, `8192`, `65536`, etc., the underlying layer automatically adjusts it to a nearby number. If it is less than `1024`, it defaults to `1024`, i.e., `1024` is the minimum. Starting from `v4.4.6`, the minimum is `64`.
+- If `$size` is not a power of `2`, such as `1000`, `5000`, `60000`, etc., the underlying layer automatically adjusts it to a nearby number. If it is less than `1024`, it defaults to `1024`, i.e., `1024` is the minimum. Starting from `v4.4.6`, the minimum is `64`.
 - The total memory occupied by a `Table` is (`HashTable struct size` + `KEY length of 64 bytes` + `$size value`) * (`1 + $conflict_proportion value for hash conflicts`) * (`column size`).
 - If the hash conflict rate of your data `Key`s exceeds `20%`, the reserved conflict memory blocks are insufficient. `set`ting new data will report an `Unable to allocate memory` error and return `false`, and the storage fails. In this case, you need to increase the `$size` value and restart the service.
 - Set this value as large as possible when memory is sufficient.

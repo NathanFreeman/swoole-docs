@@ -113,7 +113,7 @@ $http->start();
 Open another terminal and send an HTTP2 request using `curl`:
 
 ```bash
-curl -k https://127.0.0.1/
+curl -k https://127.0.0.1/?name=Swoole
 ```
 
 You will see the terminal output:

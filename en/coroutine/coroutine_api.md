@@ -40,7 +40,7 @@ run(function () {
 > You can nest `create` calls inside the `create` method.
 
 > [!TIP]
-> `go` is an alias of this method. Set `swoole.use_shortname=On` in `php.ini`, then import it with `use function Swoole\Coroutine\go` to call the `go()` function directly to create coroutines. Its parameters are the same as those of the `create` method.
+> `go` is an alias of this method. Import it with `use function Swoole\Coroutine\go` to call the `go()` function directly to create coroutines; its parameters are the same as those of the `create` method. When `swoole.use_shortname=On` is set in `php.ini`, a global `go()` function is additionally registered, which can be called directly without importing.
 
 ### defer
 
@@ -52,7 +52,7 @@ public static function defer(callable $callback): void
 
 | Parameter | Description | Default |
 |:---|:---|:---|
-| `$callback` | The function the coroutine executes | Required |
+| `$callback` | The function to execute before the coroutine closes | Required |
 
 **Example**
 
@@ -317,7 +317,7 @@ public static function join(array $cid_array, float $timeout = -1): bool
 | `$cid_array` | Array of coroutine IDs (cid), i.e. the IDs returned when creating coroutines with `go()` or [`Swoole\Coroutine::create()`](#create) | Required |
 | `$timeout` | Total timeout. Returns immediately after the timeout, but running coroutines continue to completion and are not aborted | `-1` |
 
-**Return value**: Returns `true` on success and `false` on failure. If cancellation fails, you can call `swoole_last_error()` to view the error information.
+**Return value**: Returns `true` on success and `false` on failure. If waiting fails, you can call `swoole_last_error()` to view the error information.
 
 **Example**
 
@@ -472,7 +472,7 @@ public static function getElapsed(int $cid = 0): int
 |:---|:---|:---|
 | `$cid` | Optional parameter, the `CID` of the coroutine | Current coroutine `CID` |
 
-**Return value**: The time the coroutine has been running, a floating-point number with millisecond precision.
+**Return value**: The time the coroutine has been running, an integer in microseconds.
 
 **Example**
 
@@ -632,7 +632,7 @@ run(function () {
     do_something();
     // Yield the coroutine
     sleep(1);
-    echo Coroutine::getExecuteTime(); // Returns 3 seconds
+    echo Coroutine::getExecuteTime(); // Returns about 3000 milliseconds
 });
 ```
 

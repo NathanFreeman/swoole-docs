@@ -36,7 +36,7 @@ php --ri swoole
 ### New Features
 - Added a coroutine-based `FTP` client. Adding the `--enable-swoole-ftp` option at compile time enables coroutine support for `FTP` operations, avoiding network blocking
 - Added a coroutine-based `SSH` client. Adding the `--with-swoole-ssh2` option at compile time enables coroutine support for `SSH` operations, improving concurrency efficiency
-- Added `io_uring` support for the coroutine `HTTP` server. The coroutine `HTTP` server can now use the high-performance `io_uring` event mechanism. Add the `--enable-uring_socket` option at compile time to enable it for better I/O performance
+- Added `io_uring` support for the coroutine `HTTP` server. The coroutine `HTTP` server can now use the high-performance `io_uring` event mechanism. Add the `--enable-uring-socket` option at compile time to enable it for better I/O performance
 - Added the `Swoole\RemoteObject\Server` module, providing transparent coroutine operation support for `MongoDB`
 - Added the `Swoole\Coroutine::setTimeLimit()` function to control coroutine execution timeouts and prevent coroutines from occupying resources for too long
 - Added `URL` rewrite support for the `HTTP` static file server
@@ -78,8 +78,8 @@ php --ri swoole
 ## v6.2.0-rc2
 ### New Features
 - Added a coroutine-based `FTP` client. Adding the `--enable-swoole-ftp` option at compile time enables coroutine support for `FTP` operations, avoiding network blocking
-- Added a coroutine-based `SSH` client. Adding the `--enable-swoole-ssh` option at compile time enables coroutine support for `SSH` operations, improving concurrency efficiency
-- Added `io_uring` support for the coroutine `HTTP` server. The coroutine `HTTP` server can now use the high-performance `io_uring` event mechanism. Add the `--enable-uring_socket` option at compile time to enable it for better I/O performance
+- Added a coroutine-based `SSH` client. Adding the `--with-swoole-ssh2` option at compile time enables coroutine support for `SSH` operations, improving concurrency efficiency
+- Added `io_uring` support for the coroutine `HTTP` server. The coroutine `HTTP` server can now use the high-performance `io_uring` event mechanism. Add the `--enable-uring-socket` option at compile time to enable it for better I/O performance
 - Added the `Swoole\RemoteObject\Server` module, providing transparent coroutine operation support for `MongoDB`
 - Added the `Swoole\Coroutine::setTimeLimit()` function to control coroutine execution timeouts and prevent coroutines from occupying resources for too long
 - Added `URL` rewrite support for the `HTTP` static file server
@@ -121,8 +121,8 @@ php --ri swoole
 ## v6.2.0-rc1
 ### New Features
 - Added a coroutine-based `FTP` client. Adding the `--enable-swoole-ftp` option at compile time enables coroutine support for `FTP` operations, avoiding network blocking
-- Added a coroutine-based `SSH` client. Adding the `--enable-swoole-ssh` option at compile time enables coroutine support for `SSH` operations, improving concurrency efficiency
-- Added `io_uring` support for the coroutine `HTTP` server. The coroutine `HTTP` server can now use the high-performance `io_uring` event mechanism. Add the `--enable-uring_socket` option at compile time to enable it for better I/O performance
+- Added a coroutine-based `SSH` client. Adding the `--with-swoole-ssh2` option at compile time enables coroutine support for `SSH` operations, improving concurrency efficiency
+- Added `io_uring` support for the coroutine `HTTP` server. The coroutine `HTTP` server can now use the high-performance `io_uring` event mechanism. Add the `--enable-uring-socket` option at compile time to enable it for better I/O performance
 - Added the `Swoole\RemoteObject\Server` module, providing transparent coroutine operation support for `MongoDB`
 - Added the `Swoole\Coroutine::setTimeLimit()` function to control coroutine execution timeouts and prevent coroutines from occupying resources for too long
 - Added `URL` rewrite support for the `HTTP` static file server
@@ -245,11 +245,11 @@ use function Swoole\Coroutine\run;
 Swoole\Runtime::enableCoroutine(SWOOLE_HOOK_ALL & ~SWOOLE_HOOK_FILE);
 
 run(function() {
-    $fp = fopen("async.file:///home/test", "r");
+    $fp = fopen("async.file:///home/test", "w");
     fwrite($fp, "data");
     fclose($fp);
 
-   $content = file_get_contents("async.file:///home/test.txt");
+   $content = file_get_contents("async.file:///home/test");
 });
 ```
 
@@ -442,6 +442,9 @@ $lock->unlock();
 
 ### Coroutine Cancellation
 ```php
+use Swoole\Coroutine as Co;
+use Swoole\Coroutine\System;
+
 Co\run(function () {
     $cid = Co\go(function () {
         try {
@@ -470,7 +473,7 @@ Co\run(function () {
 use Swoole\WebSocket\Server;
 use Swoole\WebSocket\Frame;
 
-$server = Server('127.0.0.1', 9502);
+$server = new Server('127.0.0.1', 9502);
 $server->set(['websocket_compression' => true]);
 $server->on('message', function (Server $server, Frame $frame) {
     $data1 = bin2hex(random_bytes(10 * 1024));
@@ -492,7 +495,7 @@ use Swoole\Coroutine\Http\Server;
 run(function() {
     $server = new Server("127.0.0.1", 9502);
     $server->set(['websocket_compression' => true]);
-    $server->handle('/', function ($request, $response) use ($data1, $data2, $data3) {
+    $server->handle('/', function ($request, $response) {
         $response->upgrade();
         $data1 = bin2hex(random_bytes(10 * 1024));
         $data2 = bin2hex(random_bytes(20 * 2048));
@@ -514,6 +517,9 @@ run(function() {
     $client = new Client('127.0.0.1', 9502);
     $client->set(['websocket_compression' => true]);
     $ret = $client->upgrade('/');
+    $data1 = bin2hex(random_bytes(10 * 1024));
+    $data2 = bin2hex(random_bytes(20 * 2048));
+    $data3 = bin2hex(random_bytes(40 * 4096));
     $context = deflate_init(ZLIB_ENCODING_RAW);
     $client->push(deflate_add($context, $data1, ZLIB_NO_FLUSH), SWOOLE_WEBSOCKET_OPCODE_TEXT, SWOOLE_WEBSOCKET_FLAG_COMPRESS | SWOOLE_WEBSOCKET_FLAG_RSV1);
     $client->push(deflate_add($context, $data2, ZLIB_NO_FLUSH), SWOOLE_WEBSOCKET_OPCODE_CONTINUATION, 0);
@@ -588,6 +594,9 @@ $lock->unlock();
 
 ### Coroutine Cancellation
 ```php
+use Swoole\Coroutine as Co;
+use Swoole\Coroutine\System;
+
 Co\run(function () {
     $cid = Co\go(function () {
         try {
@@ -616,7 +625,7 @@ Co\run(function () {
 use Swoole\WebSocket\Server;
 use Swoole\WebSocket\Frame;
 
-$server = Server('127.0.0.1', 9502);
+$server = new Server('127.0.0.1', 9502);
 $server->set(['websocket_compression' => true]);
 $server->on('message', function (Server $server, Frame $frame) {
     $data1 = bin2hex(random_bytes(10 * 1024));
@@ -638,7 +647,7 @@ use Swoole\Coroutine\Http\Server;
 run(function() {
     $server = new Server("127.0.0.1", 9502);
     $server->set(['websocket_compression' => true]);
-    $server->handle('/', function ($request, $response) use ($data1, $data2, $data3) {
+    $server->handle('/', function ($request, $response) {
         $response->upgrade();
         $data1 = bin2hex(random_bytes(10 * 1024));
         $data2 = bin2hex(random_bytes(20 * 2048));
@@ -660,6 +669,9 @@ run(function() {
     $client = new Client('127.0.0.1', 9502);
     $client->set(['websocket_compression' => true]);
     $ret = $client->upgrade('/');
+    $data1 = bin2hex(random_bytes(10 * 1024));
+    $data2 = bin2hex(random_bytes(20 * 2048));
+    $data3 = bin2hex(random_bytes(40 * 4096));
     $context = deflate_init(ZLIB_ENCODING_RAW);
     $client->push(deflate_add($context, $data1, ZLIB_NO_FLUSH), SWOOLE_WEBSOCKET_OPCODE_TEXT, SWOOLE_WEBSOCKET_FLAG_COMPRESS | SWOOLE_WEBSOCKET_FLAG_RSV1);
     $client->push(deflate_add($context, $data2, ZLIB_NO_FLUSH), SWOOLE_WEBSOCKET_OPCODE_CONTINUATION, 0);
@@ -792,7 +804,7 @@ run(function() {
 - The `iouring` async file engine supports the multithreaded polling mode `IORING_SETUP_SQPOLL`. @NathanFreeman
 - Added `iouring_workers` to change the number of `iouring` threads. @NathanFreeman
 - Added `iouring_flags` to support changing the `iouring` working mode. @NathanFreeman
-- Added the `Swoole\Thead\Barrier` multithreaded synchronization barrier. @matyhtf
+- Added the `Swoole\Thread\Barrier` multithreaded synchronization barrier. @matyhtf
 - Added new functions for setting cookies. @matyhtf @NathanFreeman
 - Added a non-blocking, reentrant mutual-exclusion coroutine lock that can be used across processes/threads without blocking the process/thread. @NathanFreeman
 - `Swoole\Coroutine\Socket::getOption()` now supports the `TCP_INFO` option. @matyhtf
@@ -909,7 +921,7 @@ run(function() {
 - The `iouring` async file engine supports the multithreaded polling mode `IORING_SETUP_SQPOLL`. @NathanFreeman
 - Added `iouring_workers` to change the number of `iouring` threads. @NathanFreeman
 - Added `iouring_flags` to support changing the `iouring` working mode. @NathanFreeman
-- Added the `Swoole\Thead\Barrier` multithreaded synchronization barrier. @matyhtf
+- Added the `Swoole\Thread\Barrier` multithreaded synchronization barrier. @matyhtf
 - Added new functions for setting cookies. @matyhtf @NathanFreeman
 
 ### Bug Fixes
@@ -1205,7 +1217,7 @@ run(function() {
 
 ### Enhancements
 
-- Support for the `http_auto_index` option under the `Http2` server
+- Support for the `http_autoindex` option under the `Http2` server
 
 ### Fixes
 
@@ -1534,7 +1546,7 @@ run(function() {
 
 - Added the `Http\Request\getMethod()` method (#3987) (@luolaifa000)
 - Added the `Coroutine\Socket->recvLine()` method (#4014) (@matyhtf)
-- Added the `Coroutine\Socket->readWithBuffer()` method (#4017) (@matyhtf)
+- Added the `Coroutine\Socket->recvWithBuffer()` method (#4017) (@matyhtf)
 
 ### Enhancements
 
@@ -1800,7 +1812,7 @@ $http->start();
 
 ### Backward-Incompatible Changes
 
-- SWOOLE_HOOK_ALL includes SWOOlE_HOOK_CURL (#3606) (@matyhtf)
+- SWOOLE_HOOK_ALL includes SWOOLE_HOOK_CURL (#3606) (@matyhtf)
 - Removed ssl_method and added ssl_protocols (#3639) (@Yurunsoft)
 
 ### New APIs
@@ -2117,7 +2129,7 @@ $http->start();
 ### Enhancements
 
 - Improved SSL server performance (#3077) (85a9a595) (@matyhtf)
-- Removed the HTTP header size limit (#3187) limitation (@twose)
+- Removed the HTTP header size limit (#3187) (@twose)
 - Support for MIPS (#3196) (@ekongyun)
 - Support for CURLOPT_HTTPAUTH (swoole/library@570318be) (@twose)
 

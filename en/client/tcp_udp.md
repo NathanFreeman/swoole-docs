@@ -105,7 +105,7 @@ public function connect(string $host, int $port = 0, float $timeout = 0.5, int $
 | `$host` | Server address [supports automatic async domain name resolution; `$host` can be a domain name directly] | Required |
 | `$port` | Server port | `0` |
 | `$timeout` | Sets the timeout; unit: seconds [supports floating point, e.g. `1.5` means `1s`+`500ms`] | `0.5` |
-| `$flag` | For a `UDP client`, setting `$flag = 1` "binds" the connection to the `$host` and `$port` specified in the `connect` method. From then on it only receives packets from this specific IP and port and discards data from all other sources. This lets you simulate "connection"-like behavior on UDP, a `connectionless` protocol.<br>For a `TCP client`, setting `$flag = 1` enables non-blocking mode, after which this `fd` becomes async IO and `connect` returns immediately. If `$flag` is set to `1`, you must use [swoole_client_select](/en/client/sync.html#swoole-client-select) before `send/recv` to check readability/writability. | `0` |
+| `$flag` | For a `UDP client`, setting `$flag = 1` "binds" the connection to the `$host` and `$port` specified in the `connect` method. From then on it only receives packets from this specific IP and port and discards data from all other sources. This lets you simulate "connection"-like behavior on UDP, a `connectionless` protocol.<br>For a `TCP client`, setting `$flag = 1` enables non-blocking mode, after which this `fd` becomes async IO and `connect` returns immediately. | `0` |
 
 **Return value**: Returns `true` on success. Returns `false` on failure — check the `errCode` property for the failure reason.
 
@@ -152,7 +152,7 @@ public function send(string $data, float $timeout = 0): int|false
 | Parameter | Description | Default |
 |:---|:---|:---|
 | `$data` | The data to send; must be a string, supports binary data | Required |
-| `$timeout` | Timeout. | `0` |
+| `$timeout` | Timeout; unit: seconds. | `0` |
 
 **Return value**: On success, returns the number of bytes written to the `Socket` buffer; the underlying layer sends out as much of the data as possible. If the returned byte count differs from the length of the passed `$data`, the `Socket` may have been closed by the peer, and the next call to `send` or `recv` will return the corresponding error code. Returns false on failure; use `$client->errCode` to get the failure reason.
 

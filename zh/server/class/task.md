@@ -59,7 +59,7 @@ public int $flags
 > `flags` 返回的结果是以下几种类型：
 >
 > - `SWOOLE_TASK_NOREPLY | SWOOLE_TASK_NONBLOCK` 表示这不是 `worker` 进程发送给 `task` 进程的，此时如果在 `task` 事件中调用 [`Swoole\Server::finish()`](/zh/server/methods.html#finish) 的话，将会有一个警告发出。
-> - `SWOOLE_TASK_CALLBACK | SWOOLE_TASK_NONBLOCK` 表示 `Swoole\Server::finish()` 中最后一个回调函数不是 `null`，`finish` 事件将不会执行，而只会执行这个回调函数。
+> - `SWOOLE_TASK_CALLBACK | SWOOLE_TASK_NONBLOCK` 表示 `Swoole\Server::task()` 中最后一个回调函数不是 `null`，`finish` 事件将不会执行，而只会执行这个回调函数。
 > - `SWOOLE_TASK_COROUTINE | SWOOLE_TASK_NONBLOCK` 表示将会通过协程的形式处理任务。
 > - `SWOOLE_TASK_NONBLOCK` 默认值，当以上三种情况都没有的时候。
 

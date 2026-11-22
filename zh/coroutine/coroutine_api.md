@@ -40,7 +40,7 @@ run(function () {
 > 可以在 `create` 方法中嵌套执行 `create` 方法。
 
 > [!TIP]
-> `go` 是该方法的别名，需要在 `php.ini` 中设置 `swoole.use_shortname=On`，然后通过 `use function Swoole\Coroutine\go` 引入，即可直接调用 `go()` 函数创建协程，参数说明和 `create` 方法一致。
+> `go` 是该方法的别名，通过 `use function Swoole\Coroutine\go` 引入后即可直接调用 `go()` 函数创建协程，参数说明和 `create` 方法一致。在 `php.ini` 中设置 `swoole.use_shortname=On` 时，会额外注册全局的 `go()` 函数，无需引入即可直接调用。
 
 ### defer
 
@@ -52,7 +52,7 @@ public static function defer(callable $callback): void
 
 | 参数 | 说明 | 默认值 |
 |:---|:---|:---|
-| `$callback` | 协程执行的函数 | 必填 |
+| `$callback` | 协程关闭前执行的函数 | 必填 |
 
 **示例**
 
@@ -317,7 +317,7 @@ public static function join(array $cid_array, float $timeout = -1): bool
 | `$cid_array` | 协程 ID（cid）数组，即通过 `go()` 或 [`Swoole\Coroutine::create()`](#create) 创建协程时返回的 ID | 必填 |
 | `$timeout` | 总的超时时间，超时后会立即返回。但正在运行的协程会继续执行完毕，而不会中止 | `-1` |
 
-**返回值**：成功时返回 `true`，失败将会返回 `false`。取消失败可以调用 `swoole_last_error()` 查看错误信息。
+**返回值**：成功时返回 `true`，失败将会返回 `false`。等待失败可以调用 `swoole_last_error()` 查看错误信息。
 
 **示例**
 
@@ -472,7 +472,7 @@ public static function getElapsed(int $cid = 0): int
 |:---|:---|:---|
 | `$cid` | 可选参数，协程的 `CID` | 当前协程 `CID` |
 
-**返回值**：协程已运行的时间，浮点数，毫秒级精度。
+**返回值**：协程已运行的时间，整型，单位为微秒。
 
 **示例**
 
@@ -632,7 +632,7 @@ run(function () {
     do_something();
     // 让出协程
     sleep(1);
-    echo Coroutine::getExecuteTime(); // 返回 3 秒
+    echo Coroutine::getExecuteTime(); // 返回约 3000 毫秒
 });
 ```
 

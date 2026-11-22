@@ -41,7 +41,7 @@ public int $type = 0;
 A read-only array of client configuration options set via the [set](/en/client/http2.html#set) method. It is `null` when no configuration has been set.
 
 ```php
-public array $setting = null;
+public ?array $setting = null;
 ```
 
 ### socket

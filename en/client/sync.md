@@ -341,8 +341,8 @@ public function getpeername(): array|false
 
 | Parameter  | Type     | Description      |
 |------|--------|---------|
-| host | string | Client IP address |
-| port | int    | Client port number  |
+| host | string | Peer (server) IP address |
+| port | int    | Peer (server) port number  |
 
 ### close
 

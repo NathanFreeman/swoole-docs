@@ -11,7 +11,7 @@ The correspondence between PHP versions and Swoole versions is as follows:
 
 | Swoole Version | Minimum PHP Version |
 |:---|:---|
-| `6.0` | PHP `8.0` |
+| `6.0` | PHP `8.1` |
 | `6.1` | PHP `8.1` |
 | `6.2` | PHP `8.2` |
 
@@ -38,7 +38,7 @@ Some Swoole features require additional system libraries. In the table below, **
 | | `make` | Make build tool, executes the compilation tasks | ✅ Required |
 | | `gcc` | GNU C compiler, compiles C/C++ code | ✅ Required |
 | **Encryption support** | `libssl-dev` | OpenSSL development library, provides HTTPS, encryption, and related features | ✅ Required |
-| **Compression algorithms** | `libbrotli-dev` | Brotli compression library, commonly used for web page compression | ✅ Required |
+| **Compression algorithms** | `libbrotli-dev` | Brotli compression library, commonly used for web page compression | ⚠️ Optional |
 | | `zlib1g-dev` | zlib compression library, supports the gzip format | ⚠️ Optional |
 | | `libzstd-dev` | Zstandard compression library, high-performance compression | ⚠️ Optional |
 | **Networking support** | `libc-ares-dev` | Asynchronous DNS resolution library | ⚠️ Optional |
@@ -121,7 +121,7 @@ pie install swoole/swoole:6.2.0
 Feature options can also be specified before installation:
 
 ```shell
-pie install swoole/swoole:6.2.0 --enable-socket --enable-swoole-curl
+pie install swoole/swoole:6.2.0 --enable-sockets --enable-swoole-curl
 ```
 
 ### Option 3: Build from Source
@@ -183,8 +183,8 @@ When running `./configure` during a PECL/PIE or source installation, the followi
 | `--with-swoole-oracle` | Enables coroutine support for `pdo_oci`, for the Oracle database. | Depends on the `oracle-client-sdk` library. Example: `--with-swoole-oracle=instantclient,/usr/local/instantclient` |
 | `--enable-swoole-sqlite` | Enables coroutine support for `pdo_sqlite`. | Depends on the `sqlite3` and `libsqlite3-dev` libraries. |
 | `--enable-swoole-thread` | Enables [multithreaded mode](/en/thread/create.html), changing the process model to single-process multithreaded. | Requires a ZTS build of PHP, Swoole 6.0+. |
-| `--enable-iouring` | Uses `io_uring` instead of the thread pool for [async file I/O](/en/file_async.html). | Requires a recent Linux kernel and `liburing >= 2.8`, Swoole 6.0+. |
-| `--enable-iouring-dir` | Specifies the `liburing` library path. | Requires a recent Linux kernel and `liburing >= 2.8`, Swoole 6.0+. |
+| `--enable-iouring` | Uses `io_uring` instead of the thread pool for [async file I/O](/en/file_async.html). | Requires a recent Linux kernel and `liburing >= 2.6` (Swoole 6.2+ requires `>= 2.8`). |
+| `--with-liburing-dir` | Specifies the `liburing` library path. | Requires a recent Linux kernel and `liburing >= 2.6` (Swoole 6.2+ requires `>= 2.8`). |
 | `--enable-uring-socket` | Uses `io_uring` instead of `epoll/kqueue` for socket I/O. | Depends on `--enable-iouring`, Swoole 6.2+. |
 | `--enable-zstd` | Enables Zstandard compression algorithm support. | Depends on the `libzstd` library, Swoole 6.0+. |
 | `--with-swoole-ssh2` | Enables coroutine support for `ssh2`. | Available in Swoole 6.2+. |

@@ -1,5 +1,5 @@
 # 捐赠Swoole项目
-- 您的捐赠是对`Swoole`项目开发组最大的鼓励和支持。我们会坚持开发维护下去。 您的捐赠将被用于：持续和深入地开发和文档和社区的建设和维护
+- 您的捐赠是对`Swoole`项目开发组最大的鼓励和支持。我们会坚持开发维护下去。 您的捐赠将被用于：持续深入地开发，以及文档与社区的建设和维护
 
 > [点击捐赠 Swoole 开源项目](https://gitee.com/swoole/swoole?donate=true)
 
@@ -14,7 +14,7 @@
 | [shopxo.net](https://shopxo.net/)                                          | 1024 元    | [![ShopXO](https://wenda-1252906962.file.myqcloud.com/images/sponsors/shopxo.png)](https://shopxo.net/)                                                                 |
 | [SegmentFault](https://segmentfault.com/)                                  | 1024 元    | [![](https://cdn.jsdelivr.net/gh/sy-records/staticfile/images/swoole/segmentfault.svg "SegmentFault")](https://segmentfault.com/)                                       |
 | [果酱社区](https://guojiang.club/?utm_source=swoole&utm_campaign=sponsor)      | 3000 元    | [![](https://wiki.swoole.com/static/uploads/wiki/202001/19/273190976660.jpg "果酱社区 :size=autox150")](https://guojiang.club/?utm_source=swoole&utm_campaign=sponsor)      |
-| [易软天创](https://www.easycorp.cn/)                                           | 3000 元    | [![ShopXO](https://wenda-1252906962.file.myqcloud.com/images/sponsors/easysoft.png)](https://www.easycorp.cn/)                                                          |
+| [易软天创](https://www.easycorp.cn/)                                           | 3000 元    | [![易软天创](https://wenda-1252906962.file.myqcloud.com/images/sponsors/easysoft.png)](https://www.easycorp.cn/)                                                          |
 | [六星教育](https://www.sixstaredu.com/)                                        | 4000 元    | [![](https://wiki.swoole.com/static/uploads/wiki/201812/03/197630887599.jpg "六星教育 :size=autox150")](https://www.sixstaredu.com/)                                        |
 | [codecasts.com](https://codecasts.com/)                                    | 8000 元    | [![](https://user-images.githubusercontent.com/6011686/28741127-791014ae-7442-11e7-929e-114e5047d9e5.png "codecasts")](https://codecasts.com/)                          |
 | [51talk](http://www.51talk.com/)                                           | 10000 元   | [![](https://static.51talk.com/static/images/html/www_new/common/log.png?v=2017-12-21 "51talk")](http://www.51talk.com/)                                                |

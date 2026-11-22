@@ -210,7 +210,7 @@ $http->start();
 ### getContent
 
 - 获取原始 HTTP 请求主体（Body），主要用于处理 `application/x-www-form-urlencoded` 之外的 `POST` 请求类型（如 `application/json`、`text/xml` 等）。
-- 此方法等效于 PHP 中的 `fopen('php://input')`。
+- 此方法等效于 PHP 中的 `file_get_contents('php://input')`。
 
 ```php
 Swoole\Http\Request->getContent(): string|false

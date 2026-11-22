@@ -90,7 +90,7 @@ public array $requestHeaders;
 The request body of the current `HTTP` client.
 
 ```php
-public array $requestBody;
+public string $requestBody;
 ```
 
 ### uploadFiles
@@ -103,10 +103,10 @@ public array $uploadFiles;
 
 ### downloadFile
 
-The file downloaded from the server.
+The local save path of the file downloaded from the server.
 
 ```php
-public array $downloadFile;
+public string $downloadFile;
 ```
 
 ### downloadOffset
@@ -130,7 +130,7 @@ public int $statusCode;
 The response headers from the `HTTP` server.
 
 ```php
-public array headers;
+public array $headers;
 ```
 
 ### set_cookie_headers
@@ -322,9 +322,8 @@ run(function() {
     foreach ($clients as $cli) {
         $cli->recv();      // Wait for and receive the response
         $results[] = $cli->body;
+        $cli->close();
     }
-    
-    $client->close();
 });
 ```
 
@@ -382,7 +381,7 @@ public function setBasicAuth(string $username, string $password): void
 | `$username` | Username for `HTTP Basic Auth` | Required |
 | `$password` | Password for `HTTP Basic Auth` | Required |
 
-**Return value**: Returns `true` on success, `false` on failure.
+**Return value**: No return value.
 
 **Example**
 
@@ -541,7 +540,7 @@ run(function() {
 A method in the `HTTP` client for uploading in-memory data. Similar to `addFile`, but it allows uploading `string content` as a `virtual file` (supports `multipart/form-data` format)
 
 ```php
-public function addData(string $data, string $name, ?string $type = null, ?string $filename = null, int $offset = 0, int $length = 0): bool
+public function addData(string $data, string $name, ?string $type = null, ?string $filename = null): bool
 ```
 
 | Parameter | Description | Default |
@@ -567,7 +566,7 @@ run(function() {
     $imageData = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==');
     
     // Upload the in-memory data as a file
-    $client->addData($imageData, 'test.png', 'image_file', 'image/png');
+    $client->addData($imageData, 'image_file', 'image/png', 'test.png');
     
     // Send the POST request
     $client->post('/upload.php', []);
@@ -921,7 +920,7 @@ Gets the `Cookie` information returned by the server.
 public function getCookies(): null|array|false
 ```
 
-**Return value**: Returns an array containing the `HTTP` response header information on success, `false` on failure.
+**Return value**: Returns an array containing the `Cookie` key-value pairs returned by the server on success, `false` on failure.
 
 **Example**
 
@@ -1190,9 +1189,8 @@ run(function() {
     foreach ($clients as $cli) {
         $cli->recv();      // Wait for and receive the response
         $results[] = $cli->body;
+        $cli->close();
     }
-    
-    $client->close();
 });
 ```
 
@@ -1337,6 +1335,7 @@ public function disconnect(int $code = SWOOLE_WEBSOCKET_CLOSE_NORMAL, string $re
 ```php
 <?php
 use Swoole\Coroutine\Http\Client;
+use Swoole\Coroutine;
 use function Swoole\Coroutine\run;
 
 run(function() {

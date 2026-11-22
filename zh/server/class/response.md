@@ -78,7 +78,7 @@ use Swoole\Http\Server;
 use Swoole\Http\Request;
 use Swoole\Http\Response;
 
-$server = new Server('127.0.0.1', SWOOLE_BASE);
+$server = new Server('127.0.0.1', 9501, SWOOLE_BASE);
 $server->on('request', function(Request $request, Response $response) {
     $response->write('Hello ');
     $response->write('World!');
@@ -115,7 +115,7 @@ use Swoole\Http\Server;
 use Swoole\Http\Request;
 use Swoole\Http\Response;
 
-$server = new Server('127.0.0.1', SWOOLE_BASE);
+$server = new Server('127.0.0.1', 9501, SWOOLE_BASE);
 $server->on('request', function(Request $request, Response $response) {
     $response->end('Hello World');
 });
@@ -146,7 +146,7 @@ use Swoole\Http\Server;
 use Swoole\Http\Request;
 use Swoole\Http\Response;
 
-$server = new Server('127.0.0.1', SWOOLE_BASE);
+$server = new Server('127.0.0.1', 9501, SWOOLE_BASE);
 $server->on('request', function(Request $request, Response $response) {
     $response->sendfile(__FILE__);
 });
@@ -182,7 +182,7 @@ use Swoole\Http\Server;
 use Swoole\Http\Request;
 use Swoole\Http\Response;
 
-$server = new Server('127.0.0.1', SWOOLE_BASE);
+$server = new Server('127.0.0.1', 9501, SWOOLE_BASE);
 $server->on('request', function(Request $request, Response $response) {
     $response->redirect("https://www.baidu.com");
 });
@@ -221,7 +221,7 @@ use Swoole\Http\Request;
 use Swoole\Http\Response;
 use Swoole\Http\Cookie;
 
-$server = new Server('127.0.0.1', SWOOLE_BASE);
+$server = new Server('127.0.0.1', 9501, SWOOLE_BASE);
 $server->on('request', function(Request $request, Response $response) {
     $cookie = new Cookie();
     $cookie->withName('key1')
@@ -236,7 +236,7 @@ $server->on('request', function(Request $request, Response $response) {
         ->withPartitioned(true);
             
     $response->cookie($cookie);
-    $response->cookie('key2', 'value2', time() + 84600, true, true, 'None', 'High', true);
+    $response->cookie('key2', 'value2', time() + 84600, '/', '', true, true, 'None', 'High', true);
     $response->end('Hello World');
 });
 $server->start();
@@ -253,7 +253,7 @@ $server->start();
 设置 `HTTP` 响应的 `cookie` 信息，但是不对 `value` 进行编码处理。
 
 ```php
-public function rawcookie(string $name, string $value = '', int $expires = 0, string $path = '/', string $domain = '', bool $secure = false, bool $httponly = false, string $samesite = '', string $priority = '', bool $partitioned = false): bool
+public function rawcookie(\Swoole\Http\Cookie|string $name_or_object, string $value = '', int $expires = 0, string $path = '/', string $domain = '', bool $secure = false, bool $httponly = false, string $samesite = '', string $priority = '', bool $partitioned = false): bool
 ```
 
 | 参数 | 说明 | 默认值 |
@@ -280,7 +280,7 @@ use Swoole\Http\Request;
 use Swoole\Http\Response;
 use Swoole\Http\Cookie;
 
-$server = new Server('127.0.0.1', SWOOLE_BASE);
+$server = new Server('127.0.0.1', 9501, SWOOLE_BASE);
 $server->on('request', function(Request $request, Response $response) {
     $cookie = new Cookie();
     $cookie->withName('key1')
@@ -295,7 +295,7 @@ $server->on('request', function(Request $request, Response $response) {
         ->withPartitioned(true);
             
     $response->rawcookie($cookie);
-    $response->rawcookie('key2', 'value2', time() + 84600, true, true, 'None', 'High', true);
+    $response->rawcookie('key2', 'value2', time() + 84600, '/', '', true, true, 'None', 'High', true);
     $response->end('Hello World');
 });
 $server->start();
@@ -330,7 +330,7 @@ use Swoole\Http\Server;
 use Swoole\Http\Request;
 use Swoole\Http\Response;
 
-$server = new Server('127.0.0.1', SWOOLE_BASE);
+$server = new Server('127.0.0.1', 9501, SWOOLE_BASE);
 $server->on('request', function(Request $request, Response $response) {
     $response->header('Content-Type', 'text/html');
     $response->end("Hello World");
@@ -706,6 +706,7 @@ run(function() {
 <?php
 use Swoole\Coroutine\Http\Server;
 use Swoole\WebSocket\Frame;
+use Swoole\WebSocket\CloseFrame;
 use Swoole\Http\Request;
 use Swoole\Http\Response;
 use Swoole\Coroutine\run;
@@ -968,7 +969,7 @@ $server->set([
 
 $server->on('request', function(Request $request, Response $response) {
     // 发送 GOAWAY 帧通知客户端关闭连接
-    $response->goaway(SW_HTTP2_ERROR_NO_ERROR, 'Server shutting down');
+    $response->goaway(SWOOLE_HTTP2_ERROR_NO_ERROR, 'Server shutting down');
     $response->end('Goodbye!');
 });
 

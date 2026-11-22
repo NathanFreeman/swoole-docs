@@ -44,7 +44,7 @@ public ?array $cookies = null;
 请求主体。字符串则直接发送；数组会被自动编码为 `application/x-www-form-urlencoded` 格式。
 
 ```php
-public string $data = '';
+public string|array $data = '';
 ```
 
 ### pipeline

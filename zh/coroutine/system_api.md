@@ -235,7 +235,7 @@ public static function writeFile(string $filename, string $fileContent, int $fla
 > [!NOTE]
 > `$flags` 还支持 `LOCK_EX`，写入时会对文件加独占锁，防止其他协程读写此文件。多个选项可使用按位或 `|` 连接，如 `FILE_APPEND | LOCK_EX`。
 
-**返回值**：写入成功返回 `true`，写入失败返回 `false`。
+**返回值**：写入成功返回写入的字节数，写入失败返回 `false`。
 
 **示例**
 
@@ -344,10 +344,10 @@ public static function waitSignal(int|array $signo, float $timeout = -1): int|fa
 
 | 参数 | 说明 | 默认值 |
 |:---|:---|:---|
-| `$signo` | 信号类型，可使用 `SIG` 系列常量，如 `SIGTERM`、`SIGKILL` 等 | 必填 |
+| `$signo` | 信号类型，可使用 `SIG` 系列常量，如 `SIGTERM`、`SIGUSR1` 等 | 必填 |
 | `$timeout` | 超时时间，负数表示永不超时，单位为秒，最小精度为毫秒（`0.001` 秒） | `-1` |
 
-**返回值**：收到信号返回 `true`，超时未收到信号返回 `false`。
+**返回值**：收到信号返回信号编号，超时未收到信号返回 `false`。
 
 **示例**
 
@@ -371,7 +371,7 @@ Process::kill($process->pid, SIGUSR1);
 
 ### waitEvent
 
-协程版本的信号监听器，会阻塞当前协程直到可读可写触发。类似于 [Swoole\Event::add()](/zh/event.html#add)。
+协程版本的 IO 事件监听器，会阻塞当前协程直到可读可写触发。类似于 [Swoole\Event::add()](/zh/event.html#add)。
 
 ```php
 public static function waitEvent(mixed $socket, int $events = SWOOLE_EVENT_READ, float $timeout = -1): int|false
@@ -392,15 +392,15 @@ public static function waitEvent(mixed $socket, int $events = SWOOLE_EVENT_READ,
 
 ```php
 <?php
-use Swoole\Coroutine;
+use Swoole\Coroutine\System;
 use function Swoole\Coroutine\run;
 
 run(function () {
     $client = stream_socket_client('tcp://www.qq.com:80', $errno, $errstr, 30);
-    $events = Coroutine::waitEvent($client, SWOOLE_EVENT_READ | SWOOLE_EVENT_WRITE);
+    $events = System::waitEvent($client, SWOOLE_EVENT_READ | SWOOLE_EVENT_WRITE);
     assert($events === SWOOLE_EVENT_WRITE);
     fwrite($client, "GET / HTTP/1.1\r\nHost: www.qq.com\r\n\r\n");
-    $events = Coroutine::waitEvent($client, SWOOLE_EVENT_READ);
+    $events = System::waitEvent($client, SWOOLE_EVENT_READ);
     assert($events === SWOOLE_EVENT_READ);
     $response = fread($client, 8192);
     echo $response;

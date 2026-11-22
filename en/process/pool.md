@@ -381,7 +381,7 @@ public function sendMessage(string $data, int $dst_worker_id): bool
 | Parameter | Description | Default |
 |:---|:---|:---|
 | `$data` | The data to send | Required |
-| `$dst_worker_id` | The target process `id` | `0` |
+| `$dst_worker_id` | The target process `id` | Required |
 
 **Return value**: Returns `true` on success and `false` on failure.
 
@@ -398,7 +398,7 @@ use Swoole\Process;
 
 $pool = new Process\Pool(2, SWOOLE_IPC_UNIXSOCK);
 $pool->set([
-    'enable_coroutine' => true,
+    'enable_coroutine' => false,
     // 'enable_message_bus' => true, // When enabled, outputs int(6000)
     'enable_message_bus' => false,   // When disabled, outputs int(2048)
     'max_package_size' => 2 * 1024,
@@ -456,7 +456,7 @@ $pool->on("WorkerStart", function ($pool, $workerId) {
     $redis->pconnect('127.0.0.1', 6379);
     $key = "key1";
     while ($running) {
-        $msg = $redis->brpop($key);
+        $msg = $redis->brpop($key, 2);
         pcntl_signal_dispatch();
         if ($msg == null) continue;
         var_dump($msg);
@@ -561,7 +561,7 @@ $pool->start();
 Gets the worker process object; returns [Swoole\Process](/en/process/process.html).
 
 ```php
-public function getProcess(int $worker_id): Swoole\Process
+public function getProcess(int $worker_id = -1): Swoole\Process
 ```
 
 | Parameter | Description | Default |
