@@ -160,6 +160,161 @@ export default defineConfig({
 
             }
         },
+        'zh-hant': {
+            link: '/zh-hant/',
+            title: "Swoole 文檔",
+            description: "Swoole 文檔",
+            label: '繁體中文',
+            lang: 'zh-Hant',
+            themeConfig: {
+                logoLink: '/zh-hant/start/swoole',
+                sidebar: [
+                    {
+                        text: '快速開始',
+                        collapsed: true,
+                        items: [
+                            {text: '什麼是Swoole', link: '/zh-hant/start/swoole.md'},
+                            {text: '安裝', link: '/zh-hant/start/install.md'},
+                        ]
+                    },
+                    {
+                        text: '協程',
+                        collapsed: true,
+                        items: [
+                            {text: '什麼是協程', link: '/zh-hant/coroutine/coroutine.md'},
+                            {text: '協程容器', link: '/zh-hant/coroutine/container.md'},
+                            {text: '一鍵協程化', link: '/zh-hant/coroutine/hook.md'},
+                            {text: '協程方法', link: '/zh-hant/coroutine/coroutine_api.md'},
+                            {text: '系統方法', link: '/zh-hant/coroutine/system_api.md'},
+                            {text: '通道', link: '/zh-hant/coroutine/channel.md'},
+                            {text: '等待組', link: '/zh-hant/coroutine/waitGroup.md'},
+                            {text: '協程柵欄', link: '/zh-hant/coroutine/barrier.md'},
+                            {text: 'MongoDB', link: '/zh-hant/coroutine/mongodb.md'},
+                            {text: '其他', link: '/zh-hant/coroutine/others.md'},
+                        ]
+                    },
+                    {
+                        text: '異步服務器',
+                        collapsed: true,
+                        items: [
+                            {text: 'TCP/UDP服務器', link: '/zh-hant/server/tcp_udp.md'},
+                            {text: 'HTTP/HTTPS/HTTP2服務器', link: '/zh-hant/server/http.md'},
+                            {text: 'WebSocket服務器', link: '/zh-hant/server/websocket.md'},
+                            {text: 'Redis服務器', link: '/zh-hant/server/redis.md'},
+                            {text: 'MQTT （物聯網）服務器', link: '/zh-hant/server/mqtt.md'},
+                            {text: '進程/線程和工作模式', link: '/zh-hant/server/process_thread.md'},
+                            {text: '事件回調', link: '/zh-hant/server/events.md'},
+                            {text: '多端口監聽', link: '/zh-hant/server/port.md'},
+                            {text: '屬性', link: '/zh-hant/server/properties.md'},
+                            {text: '方法', link: '/zh-hant/server/methods.md'},
+                            {text: '配置', link: '/zh-hant/server/setting.md'}
+                        ]
+                    },
+                    {
+                        text: '協程服務器',
+                        collapsed: true,
+                        items: [
+                            {text: 'TCP/UDP服務器', link: '/zh-hant/server/coroutine/tcp_udp.md'},
+                            {
+                                text: 'HTTP/WebSocket服務器',
+                                collapsed: true,
+                                items: [
+                                    {text: 'HTTP服務器', link: '/zh-hant/server/coroutine/http.md'},
+                                    {text: 'WebSocket服務器', link: '/zh-hant/server/coroutine/websocket.md'},
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        text: '輔助類',
+                        collapsed: true,
+                        items: [
+                            {text: 'Request類', link: '/zh-hant/server/class/request.md'},
+                            {text: 'Response類', link: '/zh-hant/server/class/response.md'},
+                            {text: 'Cookie類', link: '/zh-hant/server/class/cookie.md'},
+                            {text: 'Frame類', link: '/zh-hant/server/class/frame.md'},
+                            {text: 'CloseFrame類', link: '/zh-hant/server/class/close_frame.md'},
+                            {text: 'Port類', link: '/zh-hant/server/class/port.md'},
+                            {text: 'Connection類', link: '/zh-hant/server/class/connection.md'},
+                            {text: 'ExitException類', link: '/zh-hant/server/class/exit_exception.md'},
+                            {text: 'Event類', link: '/zh-hant/server/class/event.md'},
+                            {text: 'Packet類', link: '/zh-hant/server/class/packet.md'},
+                            {text: 'PipeMessage類', link: '/zh-hant/server/class/pipe_message.md'},
+                            {text: 'TaskResult類', link: '/zh-hant/server/class/task_result.md'},
+                            {text: 'Task類', link: '/zh-hant/server/class/task.md'},
+                            {text: 'StatusInfo類', link: '/zh-hant/server/class/status_info.md'},
+                        ]
+                    },
+                    {
+                        text: '客戶端',
+                        collapsed: true,
+                        items: [
+                            {text: '同步阻塞客戶端', link: '/zh-hant/client/sync.md'},
+                            {text: '異步回調客戶端', link: '/zh-hant/client/async.md'},
+                            {
+                                text: '協程客戶端',
+                                collapsed: true,
+                                items: [
+                                    {text: 'TCP/UDP客戶端', link: '/zh-hant/client/tcp_udp.md'},
+                                    {text: 'Socket客戶端', link: '/zh-hant/client/socket.md'},
+                                    {text: 'HTTP/WebSocket客戶端', link: '/zh-hant/client/http_websocket.md'},
+                                    {
+                                        text: 'HTTP2',
+                                        collapsed: true,
+                                        items: [
+                                            {text: 'HTTP2客戶端', link: '/zh-hant/client/http2.md'},
+                                            {text: 'Request類', link: '/zh-hant/client/request.md'},
+                                            {text: 'Response類', link: '/zh-hant/client/response.md'},
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        text: '進程',
+                        collapsed: true,
+                        items: [
+                            {text: '創建進程', link: '/zh-hant/process/process.md'},
+                            {text: '進程池', link: '/zh-hant/process/pool.md'},
+                            {text: '進程管理', link: '/zh-hant/process/manager.md'},
+                        ]
+                    },
+                    {
+                        text: '線程',
+                        collapsed: true,
+                        items: [
+                            {text: '創建線程', link: '/zh-hant/thread/create.md'},
+                            {text: '線程池', link: '/zh-hant/thread/pool.md'},
+                            {text: '併發容器', link: '/zh-hant/thread/container.md'},
+                            {text: '同步屏障', link: '/zh-hant/thread/barrier.md'},
+                        ]
+                    },
+                    {
+                        text: '連接池',
+                        collapsed: true,
+                        items: [
+                            {text: '通用連接池', link: '/zh-hant/pool/common.md'},
+                            {text: '數據庫連接池', link: '/zh-hant/pool/database.md'},
+                            {text: 'Redis連接池', link: '/zh-hant/pool/redis.md'},
+                        ]
+                    },
+                    {text: '高性能共享內存', link: '/zh-hant/table.md'},
+                    {text: '無鎖計數器', link: '/zh-hant/atomic.md'},
+                    {text: '異步文件處理', link: '/zh-hant/file_async.md'},
+                    {text: '定時器', link: '/zh-hant/timer.md'},
+                    {text: '事件輪詢', link: '/zh-hant/event.md'},
+                    {text: '鎖', link: '/zh-hant/lock.md'},
+                    {text: '函數', link: '/zh-hant/functions.md'},
+                    {text: '版本更新', link: '/zh-hant/version_update.md'},
+                    {text: '捐贈', link: '/zh-hant/contribute/donation.md'}
+                ],
+
+                outline: {level: [2, 3], label: '頁面導航'},
+                docFooter: {prev: '上一頁', next: '下一頁'},
+                lastUpdated: {text: '最後修改'},
+            }
+        },
         en: {
             title: "Swoole Docs",
             description: "Swoole documentation",
