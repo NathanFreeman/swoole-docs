@@ -1,0 +1,53 @@
+/**
+ * 参数表排版修正
+ *
+ * 主题的 .vp-doc table 被写成 display: block + overflow-x: auto
+ * （node_modules/vitepress/dist/client/theme-default/styles/components/vp-doc.css）。
+ * 表格盒变成块之后，width: 100% 只拉满了外层块，thead/tbody 被包进一个按内容收缩的
+ * 匿名内部表格盒，表现就是「表格宽、表头和表体短一截」。所以这里既给宽度，
+ * 也把盒类型改回 display: table，宽度才会落到行和单元格上。
+ * 代价是放弃主题自带的表格横向滚动，超宽表格改为靠单元格内换行消化，
+ * 因此 overflow-wrap: anywhere 是配套的，不能删。
+ *
+ * 在此前提下，列宽规则只作用于「参数 / 说明 / 默认值」这样的恰好三列的表格，
+ * 用来解决说明列一长就反过来挤压参数列和默认值列、
+ * 导致 `string $domain`、`STREAM_IPPROTO_TCP` 这种单元格内部折行的问题。
+ * 四列及以上（安装依赖表、dispatch 模式表）铺满后仍用主题默认的列宽分配。
+ * 26% / 22% 是唯一需要按实际渲染效果微调的两个数字。
+ */
+
+/* 收紧内边距，把横向空间让给文字本身；
+   长常量/长 URL 在单元格内断开，避免没有滚动兜底后撑破内容区 */
+.vp-doc th,
+.vp-doc td {
+  padding: 7px 12px;
+  overflow-wrap: anywhere;
+}
+
+/* 表格内的行内代码比正文小一档，长常量更容易整行放下 */
+.vp-doc td code {
+  font-size: 13px;
+}
+
+/* 所有表格铺满内容区宽度，且必须回到表格盒，thead/tbody 才会跟着等宽 */
+.vp-doc table {
+  display: table;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: visible;
+}
+
+/* 恰好三列的参数表：固定列宽，说明列独占剩余空间 */
+.vp-doc table:has(> thead > tr > th:nth-child(3):last-child) {
+  table-layout: fixed;
+}
+
+.vp-doc table:has(> thead > tr > th:nth-child(3):last-child) th:first-child,
+.vp-doc table:has(> thead > tr > th:nth-child(3):last-child) td:first-child {
+  width: 26%;
+}
+
+.vp-doc table:has(> thead > tr > th:nth-child(3):last-child) th:last-child,
+.vp-doc table:has(> thead > tr > th:nth-child(3):last-child) td:last-child {
+  width: 22%;
+}
