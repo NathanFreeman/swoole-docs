@@ -132,7 +132,7 @@ public function sendfile(Swoole\SendFile|string $filename, int $offset = 0, int 
 
 | 參數 | 說明 | 默認值 |
 |:---|:---|:---|
-| `$filename` | 要發送的文件名稱，或一個 [Swoole\SendFile](/zh-hant/server/class/send_file.html) 對象。文件不存在或沒有訪問權限時 `sendfile` 會失敗 | 必填 |
+| `$filename` | 要發送的文件名稱，或一個 [Swoole\SendFile](/zh-hant/server/class/send_file.html) 對象（`v6.3.0` 版本之後可用）。文件不存在或沒有訪問權限時 `sendfile` 會失敗 | 必填 |
 | `$offset` | 上傳文件的偏移量，可以指定從文件的中間部分開始傳輸數據，此特性可用於支持斷點續傳 | `0` |
 | `$length` | 發送數據的尺寸 | 文件的尺寸 |
 | `$delete_file` | 發送任務結束時是否自動刪除文件。`v6.3.0` 版本之後可用 | `false` |

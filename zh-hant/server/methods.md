@@ -357,7 +357,7 @@ public function sendfile(int $fd, Swoole\SendFile|string $filename, int $offset 
 | 參數 | 說明 | 默認值 |
 |:---|:---|:---|
 | `$fd` | 指定客戶端的文件描述符 | 必填 |
-| `$filename` | 要發送的文件路徑，或一個 [Swoole\SendFile](/zh-hant/server/class/send_file.html) 對象。如果文件不存在會返回 `false` | 必填 |
+| `$filename` | 要發送的文件路徑，或一個 [Swoole\SendFile](/zh-hant/server/class/send_file.html) 對象（`v6.3.0` 版本之後可用）。如果文件不存在會返回 `false` | 必填 |
 | `$offset` | 指定文件偏移量，可以從文件的某個位置起發送數據 | `0`，表示從文件頭部開始發送 |
 | `$length` | 指定發送的長度 | `0`，即文件尺寸 |
 | `$delete_file` | 發送任務結束時是否自動刪除文件。`v6.3.0` 版本之後可用 | `false` |

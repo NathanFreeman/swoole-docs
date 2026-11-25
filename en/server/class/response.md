@@ -132,7 +132,7 @@ public function sendfile(Swoole\SendFile|string $filename, int $offset = 0, int 
 
 | Parameter | Description | Default |
 |:---|:---|:---|
-| `$filename` | The name of the file to send, or a [Swoole\SendFile](/en/server/class/send_file.html) object; `sendfile` fails if the file does not exist or is not accessible | Required |
+| `$filename` | The name of the file to send, or a [Swoole\SendFile](/en/server/class/send_file.html) object (available since `v6.3.0`); `sendfile` fails if the file does not exist or is not accessible | Required |
 | `$offset` | The offset of the file to upload; you can specify starting the transfer from the middle of the file, which can be used to support resumable transfers | `0` |
 | `$length` | The size of the data to send | The size of the file |
 | `$delete_file` | Whether to delete the file automatically when the send task finishes. Available since `v6.3.0` | `false` |

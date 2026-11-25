@@ -357,7 +357,7 @@ public function sendfile(int $fd, Swoole\SendFile|string $filename, int $offset 
 | Parameter | Description | Default |
 |:---|:---|:---|
 | `$fd` | Specifies the client's file descriptor | Required |
-| `$filename` | The path of the file to send, or a [Swoole\SendFile](/en/server/class/send_file.html) object. Returns `false` if the file does not exist | Required |
+| `$filename` | The path of the file to send, or a [Swoole\SendFile](/en/server/class/send_file.html) object (available since `v6.3.0`). Returns `false` if the file does not exist | Required |
 | `$offset` | Specifies the file offset, so data can be sent starting from a certain position in the file | `0`, meaning send from the beginning of the file |
 | `$length` | Specifies the length to send | `0`, i.e. the file size |
 | `$delete_file` | Whether to delete the file automatically when the send task finishes. Available since `v6.3.0` | `false` |

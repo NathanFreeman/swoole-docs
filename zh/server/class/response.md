@@ -132,7 +132,7 @@ public function sendfile(Swoole\SendFile|string $filename, int $offset = 0, int 
 
 | 参数 | 说明 | 默认值 |
 |:---|:---|:---|
-| `$filename` | 要发送的文件名称，或一个 [Swoole\SendFile](/zh/server/class/send_file.html) 对象。文件不存在或没有访问权限时 `sendfile` 会失败 | 必填 |
+| `$filename` | 要发送的文件名称，或一个 [Swoole\SendFile](/zh/server/class/send_file.html) 对象（`v6.3.0` 版本之后可用）。文件不存在或没有访问权限时 `sendfile` 会失败 | 必填 |
 | `$offset` | 上传文件的偏移量，可以指定从文件的中间部分开始传输数据，此特性可用于支持断点续传 | `0` |
 | `$length` | 发送数据的尺寸 | 文件的尺寸 |
 | `$delete_file` | 发送任务结束时是否自动删除文件。`v6.3.0` 版本之后可用 | `false` |
