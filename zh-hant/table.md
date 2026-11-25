@@ -638,6 +638,37 @@ $table->set('yyy', ['name' => '趙二', 'age' => 20, 'gender' => 1]);
 var_dump($table->stats());
 ```
 
+## 在異步服務器中使用
+
+`Swoole\Table` 必須在 `$server->start()` 之前創建。異步服務器啓動時會 `fork` 出多個 `worker` 進程，`start()` 之前創建的 `Table` 會被所有 `worker` 進程繼承，各進程讀寫的是同一塊共享內存；若在 `onWorkerStart` 回調中創建，每個 `worker` 進程會各自創建一張獨立的表，數據無法在進程間共享。
+
+下面的示例使用 `Swoole\Table` 統計所有 `worker` 進程處理的請求總數：
+
+```php
+<?php
+use Swoole\Http\Server;
+use Swoole\Http\Request;
+use Swoole\Http\Response;
+use Swoole\Table;
+
+// 必須在 $server->start() 之前創建，所有 worker 進程共享同一張表
+$table = new Table(1024);
+$table->column('count', Table::TYPE_INT);
+$table->create();
+
+$server = new Server('127.0.0.1', 9501);
+$server->set(['worker_num' => 4]);
+
+$server->on('request', function (Request $request, Response $response) use ($table) {
+    // incr 是原子操作，多個 worker 進程併發計數不會丟失
+    $total = $table->incr('total', 'count');
+    $table->incr($request->server['request_uri'], 'count');
+    $response->end("total requests: {$total}\n");
+});
+
+$server->start();
+```
+
 ## 注意
 
 - `Swoole\Table` 適用於 `多進程` 環境下的輕量級數據共享，但不支持自動擴容。

@@ -29,7 +29,7 @@ run(function () {
 - 它在底层自动完成事件循环与调度器的初始化，为协程的**并发执行**、**自动挂起**与**恢复**提供必要的运行时环境。
 - 它由 `library` 模块提供，因此必须在 `php.ini` 中设置 `swoole.enable_library=On` 才可以使用。
 - `run()` 本身就会创建一个协程环境，其回调函数也是在一个协程中执行的。如果只需要运行一个协程，无需再调用 [`go()`](/zh/coroutine/coroutine_api.html#create)，直接把业务逻辑写在 `run()` 的回调中即可。
-- 除了[异步服务器](/zh/server/tcp_udp.html)，独立脚本、自定义程序都需要通过 `run()` 方法创建协程容器。
+- 除了[异步服务器](/zh/server/tcp_udp.html)和启用协程的 [Swoole\Process](/zh/process/process.html)，独立脚本、自定义程序都需要通过 `run()` 方法创建协程容器。
 
 > [!WARNING]
 > 不能在 `run()` 里面嵌套执行 `run()`，否则会提示 `Unable to call Event::wait() in coroutine`。
@@ -60,3 +60,29 @@ $server->start();
 
 > [!WARNING]
 > 如果异步服务器已经通过 `enable_coroutine` 开启了协程，就不能再在回调中执行 `Swoole\Coroutine\run`。
+
+### Swoole\Process
+
+```php
+<?php
+use Swoole\Process;
+use Swoole\Coroutine;
+
+$process = new Process(function (Process $process) {
+    // 回调在协程中执行，可直接使用协程 API
+    Coroutine::sleep(1);
+    $process->write('done' . PHP_EOL);
+}, false, Process::PIPE_TYPE_DGRAM, true);
+
+$process->start();
+echo $process->read();
+Process::wait();
+```
+
+将构造函数的第 4 个参数 `$enable_coroutine` 设为 `true`（或通过 [set()](/zh/process/process.html#set) 设置 `enable_coroutine`），子进程启动时会自动创建协程容器：回调函数在协程中执行，回调返回后进入事件循环，直到所有协程结束进程才退出。
+
+> [!TIP]
+> 通过 [addProcess](/zh/server/methods.html#addprocess) 添加到异步服务器的自定义进程同样如此，是否创建容器由 `Process` 对象自身的 `enable_coroutine` 设置决定，不跟随服务器的 [enable_coroutine](/zh/server/setting.html#enable-coroutine) 配置。
+
+> [!WARNING]
+> 协程容器只在子进程中创建，父进程不会自动创建容器，在父进程中使用协程 API 仍需通过 `run()` 自行创建。

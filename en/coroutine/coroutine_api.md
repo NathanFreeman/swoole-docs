@@ -193,13 +193,14 @@ run(function () {
 Cancels a coroutine. You cannot cancel the current coroutine itself.
 
 ```php
-public static function cancel(int $cid, bool $throw_exception = false): bool
+public static function cancel(int $cid, bool $throw_exception = false, mixed $reason = null): bool
 ```
 
 | Parameter | Description | Default |
 |:---|:---|:---|
 | `$cid` | The `CID` of the coroutine | Required |
 | `$throw_exception` | Cancels the coroutine and throws a `Swoole\Coroutine\CanceledException` exception inside the canceled coroutine. Available since `v6.1.0` | `false` |
+| `$reason` | The cancellation reason, which can be of any type (such as an array, object, or string). After catching the exception, the canceled coroutine can retrieve this value via `Swoole\Coroutine\CanceledException::getReason()`, providing complete context for resource cleanup and exception logs. Only effective when `$throw_exception` is `true`. Available since `v6.3.0` | `null` |
 
 **Return value**: Returns `true` on success and `false` on failure. If cancellation fails, you can call `swoole_last_error()` to view the error information.
 
@@ -221,12 +222,12 @@ run(function () {
             }
             var_dump('end');
         } catch (CanceledException $e) {
-            var_dump('cancelled');
+            var_dump($e->getReason());
         }
     });
 
     sleep(0.3);
-    Coroutine::cancel($cid, true);
+    Coroutine::cancel($cid, true, ['type' => 'timeout', 'message' => 'task timeout']);
     sleep(0.2);
     echo "co 1 end\n";
 });
@@ -236,6 +237,7 @@ run(function () {
 > - The canceled coroutine must catch the `Swoole\Coroutine\CanceledException` exception; otherwise a `Fatal Error` occurs and the process exits.
 > - A coroutine cannot be canceled while it is reading or writing a file; `cancel()` returns failure with the error code `SWOOLE_ERROR_CO_CANNOT_CANCEL`.
 > - When `$throw_exception` is set to `true`, `cancel` always returns `true`.
+> - When `$throw_exception` is `false`, `$reason` must be `null`, otherwise a `ValueError` is thrown.
 
 ### isCanceled
 

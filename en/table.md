@@ -638,6 +638,37 @@ $table->set('yyy', ['name' => 'Tom', 'age' => 20, 'gender' => 1]);
 var_dump($table->stats());
 ```
 
+## Using in an asynchronous server
+
+`Swoole\Table` must be created before `$server->start()`. An asynchronous server forks multiple `worker` processes at startup; a `Table` created before `start()` is inherited by all `worker` processes, so every process reads and writes the same shared memory. If it is created inside the `onWorkerStart` callback, each `worker` process creates its own independent table, and data cannot be shared between processes.
+
+The following example uses `Swoole\Table` to count the total number of requests handled by all `worker` processes:
+
+```php
+<?php
+use Swoole\Http\Server;
+use Swoole\Http\Request;
+use Swoole\Http\Response;
+use Swoole\Table;
+
+// Must be created before $server->start(), so all worker processes share the same table
+$table = new Table(1024);
+$table->column('count', Table::TYPE_INT);
+$table->create();
+
+$server = new Server('127.0.0.1', 9501);
+$server->set(['worker_num' => 4]);
+
+$server->on('request', function (Request $request, Response $response) use ($table) {
+    // incr is atomic, concurrent counting from multiple worker processes never loses updates
+    $total = $table->incr('total', 'count');
+    $table->incr($request->server['request_uri'], 'count');
+    $response->end("total requests: {$total}\n");
+});
+
+$server->start();
+```
+
 ## Notes
 
 - `Swoole\Table` is suitable for lightweight data sharing in `multi-process` environments, but does not support automatic expansion.

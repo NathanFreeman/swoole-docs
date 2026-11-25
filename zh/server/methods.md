@@ -351,15 +351,16 @@ $server->start();
 发送文件到 `TCP` 客户端连接。
 
 ```php
-public function sendfile(int $fd, string $filename, int $offset = 0, int $length = 0): bool
+public function sendfile(int $fd, Swoole\SendFile|string $filename, int $offset = 0, int $length = 0, bool $delete_file = false): bool
 ```
 
 | 参数 | 说明 | 默认值 |
 |:---|:---|:---|
 | `$fd` | 指定客户端的文件描述符 | 必填 |
-| `$filename` | 要发送的文件路径，如果文件不存在会返回 `false` | 必填 |
+| `$filename` | 要发送的文件路径，或一个 [Swoole\SendFile](/zh/server/class/send_file.html) 对象。如果文件不存在会返回 `false` | 必填 |
 | `$offset` | 指定文件偏移量，可以从文件的某个位置起发送数据 | `0`，表示从文件头部开始发送 |
 | `$length` | 指定发送的长度 | `0`，即文件尺寸 |
+| `$delete_file` | 发送任务结束时是否自动删除文件。`v6.3.0` 版本之后可用 | `false` |
 
 **返回值**：返回 `true` 表示操作成功，返回 `false` 表示操作失败。
 
@@ -377,6 +378,12 @@ $server->on('receive', function(Server $server, int $fd, int $reactorId, string 
 
 $server->start();
 ```
+
+> [!WARNING]
+> **注意**
+>
+> - `$filename` 为 [Swoole\SendFile](/zh/server/class/send_file.html) 对象时，不得再传入 `$offset`、`$length`、`$delete_file` 参数，否则抛出 `ValueError`，发送选项以对象属性为准。
+> - `$delete_file` 为 `true` 时，文件在发送任务结束时自动删除，包括发送失败或连接提前关闭的情况，适用于「先生成临时文件再发送」的场景。
 
 ## stats
 

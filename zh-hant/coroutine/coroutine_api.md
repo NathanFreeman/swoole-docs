@@ -193,13 +193,14 @@ run(function () {
 用於取消某個協程，但不能對當前協程發起取消操作。
 
 ```php
-public static function cancel(int $cid, bool $throw_exception = false): bool
+public static function cancel(int $cid, bool $throw_exception = false, mixed $reason = null): bool
 ```
 
 | 參數 | 說明 | 默認值 |
 |:---|:---|:---|
 | `$cid` | 協程的 `CID` | 必填 |
 | `$throw_exception` | 取消協程，並在被取消的協程內拋出一個 `Swoole\Coroutine\CanceledException` 異常。`v6.1.0` 版本之後可用 | `false` |
+| `$reason` | 取消原因，可以是任意類型（如數組、對象、字符串）。被取消的協程捕獲異常後可通過 `Swoole\Coroutine\CanceledException::getReason()` 獲取該值，爲資源清理與異常日誌提供完整的上下文信息。僅在 `$throw_exception` 爲 `true` 時有效。`v6.3.0` 版本之後可用 | `null` |
 
 **返回值**：成功時返回 `true`，失敗將會返回 `false`。取消失敗可以調用 `swoole_last_error()` 查看錯誤信息。
 
@@ -221,12 +222,12 @@ run(function () {
             }
             var_dump('end');
         } catch (CanceledException $e) {
-            var_dump('cancelled');
+            var_dump($e->getReason());
         }
     });
 
     sleep(0.3);
-    Coroutine::cancel($cid, true);
+    Coroutine::cancel($cid, true, ['type' => 'timeout', 'message' => '任務超時']);
     sleep(0.2);
     echo "co 1 end\n";
 });
@@ -236,6 +237,7 @@ run(function () {
 > - 被取消的協程必須捕獲 `Swoole\Coroutine\CanceledException` 異常，否則將產生 `Fatal Error`，導致進程退出。
 > - 當協程正在讀寫文件時，是不可取消的，`cancel()` 會返回失敗，錯誤碼爲 `SWOOLE_ERROR_CO_CANNOT_CANCEL`。
 > - 當設置 `$throw_exception` 爲 `true` 時，該 `cancel` 將一直返回 `true`。
+> - 當 `$throw_exception` 爲 `false` 時，`$reason` 必須爲 `null`，否則會拋出 `ValueError`。
 
 ### isCanceled
 

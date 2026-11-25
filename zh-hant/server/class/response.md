@@ -127,14 +127,15 @@ $server->start();
 發送文件到客戶端。
 
 ```php
-public function sendfile(string $filename, int $offset = 0, int $length = 0): bool
+public function sendfile(Swoole\SendFile|string $filename, int $offset = 0, int $length = 0, bool $delete_file = false): bool
 ```
 
 | 參數 | 說明 | 默認值 |
 |:---|:---|:---|
-| `$filename` | 要發送的文件名稱，文件不存在或沒有訪問權限時 `sendfile` 會失敗 | 必填 |
+| `$filename` | 要發送的文件名稱，或一個 [Swoole\SendFile](/zh-hant/server/class/send_file.html) 對象。文件不存在或沒有訪問權限時 `sendfile` 會失敗 | 必填 |
 | `$offset` | 上傳文件的偏移量，可以指定從文件的中間部分開始傳輸數據，此特性可用於支持斷點續傳 | `0` |
 | `$length` | 發送數據的尺寸 | 文件的尺寸 |
+| `$delete_file` | 發送任務結束時是否自動刪除文件。`v6.3.0` 版本之後可用 | `false` |
 
 **返回值**：調用成功，返回 `true`，調用失敗或連接上下文不存在，返回 `false`。
 
@@ -158,6 +159,8 @@ $server->start();
 > - 調用 `sendfile` 前不得使用 `write` 方法發送 `Http-Chunk`。
 > - 調用 `sendfile` 後底層會自動執行 `end`。
 > - `sendfile` 不支持 `gzip` 壓縮。
+> - `$filename` 爲 [Swoole\SendFile](/zh-hant/server/class/send_file.html) 對象時，不得再傳入 `$offset`、`$length`、`$delete_file` 參數，否則拋出 `ValueError`，發送選項以對象屬性爲準。
+> - `$delete_file` 爲 `true` 時，文件在發送任務結束時自動刪除，包括發送失敗或連接提前關閉的情況，適用於「先生成臨時文件再發送」的場景。
 
 ### redirect
 

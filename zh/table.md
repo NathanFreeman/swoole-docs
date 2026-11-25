@@ -638,6 +638,37 @@ $table->set('yyy', ['name' => '赵二', 'age' => 20, 'gender' => 1]);
 var_dump($table->stats());
 ```
 
+## 在异步服务器中使用
+
+`Swoole\Table` 必须在 `$server->start()` 之前创建。异步服务器启动时会 `fork` 出多个 `worker` 进程，`start()` 之前创建的 `Table` 会被所有 `worker` 进程继承，各进程读写的是同一块共享内存；若在 `onWorkerStart` 回调中创建，每个 `worker` 进程会各自创建一张独立的表，数据无法在进程间共享。
+
+下面的示例使用 `Swoole\Table` 统计所有 `worker` 进程处理的请求总数：
+
+```php
+<?php
+use Swoole\Http\Server;
+use Swoole\Http\Request;
+use Swoole\Http\Response;
+use Swoole\Table;
+
+// 必须在 $server->start() 之前创建，所有 worker 进程共享同一张表
+$table = new Table(1024);
+$table->column('count', Table::TYPE_INT);
+$table->create();
+
+$server = new Server('127.0.0.1', 9501);
+$server->set(['worker_num' => 4]);
+
+$server->on('request', function (Request $request, Response $response) use ($table) {
+    // incr 是原子操作，多个 worker 进程并发计数不会丢失
+    $total = $table->incr('total', 'count');
+    $table->incr($request->server['request_uri'], 'count');
+    $response->end("total requests: {$total}\n");
+});
+
+$server->start();
+```
+
 ## 注意
 
 - `Swoole\Table` 适用于 `多进程` 环境下的轻量级数据共享，但不支持自动扩容。

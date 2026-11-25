@@ -130,7 +130,7 @@
 
 - There are two rounds of inter-process communication overhead: the `reactor` threads in the `master` process and the `worker` processes must exchange data via `unixSocket`.
 
-- `SWOOLE_PROCESS` mode does not support PHP ZTS (Zend Thread Safety). To run in a `ZTS` environment, you must use `SWOOLE_BASE`/`SWOOLE_THREAD` mode, or set the [single_thread](/en/server/setting.html#single-thread) parameter to `true`.
+- Setting [dispatch_func](/en/server/setting.html#dispatch-func) to customize the dispatch strategy forces [reactor_num](/en/server/setting.html#reactor-num) to `1`, so multiple `reactor` threads cannot process network events in parallel.
 
 ### SWOOLE_BASE
 

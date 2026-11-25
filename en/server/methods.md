@@ -351,15 +351,16 @@ $server->start();
 Sends a file to a `TCP` client connection.
 
 ```php
-public function sendfile(int $fd, string $filename, int $offset = 0, int $length = 0): bool
+public function sendfile(int $fd, Swoole\SendFile|string $filename, int $offset = 0, int $length = 0, bool $delete_file = false): bool
 ```
 
 | Parameter | Description | Default |
 |:---|:---|:---|
 | `$fd` | Specifies the client's file descriptor | Required |
-| `$filename` | The path of the file to send. Returns `false` if the file does not exist | Required |
+| `$filename` | The path of the file to send, or a [Swoole\SendFile](/en/server/class/send_file.html) object. Returns `false` if the file does not exist | Required |
 | `$offset` | Specifies the file offset, so data can be sent starting from a certain position in the file | `0`, meaning send from the beginning of the file |
 | `$length` | Specifies the length to send | `0`, i.e. the file size |
+| `$delete_file` | Whether to delete the file automatically when the send task finishes. Available since `v6.3.0` | `false` |
 
 **Return value**: Returns `true` on success, `false` on failure.
 
@@ -377,6 +378,12 @@ $server->on('receive', function(Server $server, int $fd, int $reactorId, string 
 
 $server->start();
 ```
+
+> [!WARNING]
+> **Notes**
+>
+> - When `$filename` is a [Swoole\SendFile](/en/server/class/send_file.html) object, the `$offset`, `$length`, and `$delete_file` arguments must not be provided, otherwise a `ValueError` is thrown; the object's properties take effect instead.
+> - When `$delete_file` is `true`, the file is deleted automatically when the send task finishes, including when sending fails or the connection closes early, which suits the "generate a temporary file first, then send it" scenario.
 
 ## stats
 

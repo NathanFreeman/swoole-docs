@@ -76,6 +76,7 @@ $server->set(['reactor_num' => 4]);
 > - `reactor_num` 最大不得超过 `CPU` 核数 * `4`。
 > - `reactor_num` 必须小于或等于 `worker_num`，如果设置的 `reactor_num` 大于 `worker_num`，会自动调整使 `reactor_num` 等于 `worker_num`。
 > - `reactor_num` 在超过 `8` 核的机器上默认设置为 `8`。
+> - 设置 [dispatch_func](/zh/server/setting.html#dispatch-func) 后，会强制 `reactor_num` 为 `1`。
 
 ## task_worker_num
 
@@ -462,6 +463,7 @@ $server->set(['dispatch_func' => function (Swoole\Server $server, int $fd, int $
 > - 返回的进程序号不在 `[0, worker_num - 1]` 的话，数据会被丢弃。
 > - `dispatch_func` 只能在 [SWOOLE_PROCESS 模式](/zh/server/process_thread.html#swoole-process) 下使用。
 > - `dispatch_func` 的优先级大于 `dispatch_mode`。
+> - 设置 `dispatch_func` 后，会强制 [reactor_num](/zh/server/setting.html#reactor-num) 为 `1`。
 
 ## daemonize
 
@@ -1267,11 +1269,6 @@ $server->set([
 ]);
 ```
 
-> [!WARNING]
-> **注意**
->
-> - 在 `PHP ZTS` 下，如果使用 [SWOOLE_PROCESS 模式](/zh/server/process_thread.html#swoole-process)，一定要设置该值为 `true`。
-
 ## ssl_cert_file / ssl_key_file
 
 设置 SSL 隧道加密。
@@ -1844,6 +1841,53 @@ $http2->set([
   'http2_max_header_list_size' => '32K'
 ]);
 ```
+
+## http2_cancel_on_stream_reset
+
+设置客户端发送 `RST_STREAM` 帧重置 `HTTP/2` 流时，是否取消该流上正在处理的请求协程。默认值为 `false`。
+
+开启后，`HTTP/2` 请求回调会在独立的协程中执行。当客户端重置某个流（例如浏览器取消请求）时，`Swoole` 会向该流对应的请求协程抛出 `Swoole\Coroutine\CanceledException` 异常，及时终止无意义的后续处理（如数据库查询、调用下游服务），释放服务器资源。
+
+**示例**
+
+```php
+<?php
+use Swoole\Coroutine\CanceledException;
+
+$http2->set([
+    'open_http2_protocol' => true,
+    'http2_cancel_on_stream_reset' => true,
+]);
+
+$http2->on('request', function (Swoole\Http\Request $request, Swoole\Http\Response $response) {
+    try {
+        Swoole\Coroutine::sleep(10); // 模拟耗时操作
+        $response->end('done');
+    } catch (CanceledException $e) {
+        // 客户端已取消请求，清理资源后直接返回
+        var_dump($e->getReason());
+    }
+});
+```
+
+`getReason()` 返回的关联数组包含以下字段：
+
+| 字段 | 说明 |
+|:---|:---|
+| `session_id` | 客户端连接的 `fd` |
+| `stream_id` | 被重置的流 `ID` |
+| `code` | `RST_STREAM` 帧携带的 `HTTP/2` 错误码，例如 `8` 表示 `CANCEL` |
+| `message` | 固定为 `HTTP2 Stream Reset` |
+
+> [!WARNING]
+> **注意**
+>
+> - Swoole 版本 >= `v6.3` 可用。
+> - 必须同时开启 [open_http2_protocol](/zh/server/setting.html#open-http2-protocol) 和 [enable_coroutine](/zh/server/setting.html#enable-coroutine)，否则启动时会抛出配置异常。
+> - 请求回调中必须捕获 `Swoole\Coroutine\CanceledException` 异常，否则将产生 `Fatal Error`，导致 `worker` 进程退出。
+> - 流被重置后，对应的 `$response` 不再可写，`isWritable()`、`write()`、`end()` 均返回 `false`。
+> - 若请求因 [worker_max_concurrency](/zh/server/setting.html#worker-max-concurrency) 限制仍在排队，收到重置后会直接跳过该请求的回调，不再执行。
+> - 仅在收到 `RST_STREAM` 帧时触发取消，`GOAWAY` 帧和连接关闭不会取消请求协程。
 
 ## document_root
 

@@ -130,7 +130,7 @@
 
 - 存在兩次進程間通信開銷：`master` 進程中的 `reactor` 線程與 `worker` 進程之間需通過 `unixSocket` 通信交換數據。
 
-- `SWOOLE_PROCESS` 模式不支持 PHP ZTS（Zend 線程安全）。若需在 `ZTS` 環境下運行，只能使用 `SWOOLE_BASE`/`SWOOLE_THREAD` 模式，或將 [single_thread](/zh-hant/server/setting.html#single-thread) 參數設爲 `true`。
+- 設置 [dispatch_func](/zh-hant/server/setting.html#dispatch-func) 自定義分發策略後，會強制 [reactor_num](/zh-hant/server/setting.html#reactor-num) 爲 `1`，無法使用多 `reactor` 線程並行處理網絡事件。
 
 ### SWOOLE_BASE
 

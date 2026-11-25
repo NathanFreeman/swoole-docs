@@ -29,7 +29,7 @@ run(function () {
 - 它在底層自動完成事件循環與調度器的初始化，爲協程的**併發執行**、**自動掛起**與**恢復**提供必要的運行時環境。
 - 它由 `library` 模塊提供，因此必須在 `php.ini` 中設置 `swoole.enable_library=On` 纔可以使用。
 - `run()` 本身就會創建一個協程環境，其回調函數也是在一個協程中執行的。如果只需要運行一個協程，無需再調用 [`go()`](/zh-hant/coroutine/coroutine_api.html#create)，直接把業務邏輯寫在 `run()` 的回調中即可。
-- 除了[異步服務器](/zh-hant/server/tcp_udp.html)，獨立腳本、自定義程序都需要通過 `run()` 方法創建協程容器。
+- 除了[異步服務器](/zh-hant/server/tcp_udp.html)和啓用協程的 [Swoole\Process](/zh-hant/process/process.html)，獨立腳本、自定義程序都需要通過 `run()` 方法創建協程容器。
 
 > [!WARNING]
 > 不能在 `run()` 裏面嵌套執行 `run()`，否則會提示 `Unable to call Event::wait() in coroutine`。
@@ -60,3 +60,29 @@ $server->start();
 
 > [!WARNING]
 > 如果異步服務器已經通過 `enable_coroutine` 開啓了協程，就不能再在回調中執行 `Swoole\Coroutine\run`。
+
+### Swoole\Process
+
+```php
+<?php
+use Swoole\Process;
+use Swoole\Coroutine;
+
+$process = new Process(function (Process $process) {
+    // 回調在協程中執行，可直接使用協程 API
+    Coroutine::sleep(1);
+    $process->write('done' . PHP_EOL);
+}, false, Process::PIPE_TYPE_DGRAM, true);
+
+$process->start();
+echo $process->read();
+Process::wait();
+```
+
+將構造函數的第 4 個參數 `$enable_coroutine` 設爲 `true`（或通過 [set()](/zh-hant/process/process.html#set) 設置 `enable_coroutine`），子進程啓動時會自動創建協程容器：回調函數在協程中執行，回調返回後進入事件循環，直到所有協程結束進程才退出。
+
+> [!TIP]
+> 通過 [addProcess](/zh-hant/server/methods.html#addprocess) 添加到異步服務器的自定義進程同樣如此，是否創建容器由 `Process` 對象自身的 `enable_coroutine` 設置決定，不跟隨服務器的 [enable_coroutine](/zh-hant/server/setting.html#enable-coroutine) 配置。
+
+> [!WARNING]
+> 協程容器只在子進程中創建，父進程不會自動創建容器，在父進程中使用協程 API 仍需通過 `run()` 自行創建。

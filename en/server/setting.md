@@ -76,6 +76,7 @@ $server->set(['reactor_num' => 4]);
 > - `reactor_num` must not exceed the number of `CPU` cores * `4`.
 > - `reactor_num` must be less than or equal to `worker_num`. If the configured `reactor_num` is greater than `worker_num`, it is automatically adjusted so that `reactor_num` equals `worker_num`.
 > - On machines with more than `8` cores, `reactor_num` defaults to `8`.
+> - Setting [dispatch_func](/en/server/setting.html#dispatch-func) forces `reactor_num` to `1`.
 
 ## task_worker_num
 
@@ -462,6 +463,7 @@ $server->set(['dispatch_func' => function (Swoole\Server $server, int $fd, int $
 > - If the returned worker process number is not within `[0, worker_num - 1]`, the data is discarded.
 > - `dispatch_func` can only be used in [SWOOLE_PROCESS mode](/en/server/process_thread.html#swoole-process).
 > - `dispatch_func` takes precedence over `dispatch_mode`.
+> - Setting `dispatch_func` forces [reactor_num](/en/server/setting.html#reactor-num) to `1`.
 
 ## daemonize
 
@@ -1267,11 +1269,6 @@ $server->set([
 ]);
 ```
 
-> [!WARNING]
-> **Notes**
->
-> - Under `PHP ZTS`, if you use [SWOOLE_PROCESS mode](/en/server/process_thread.html#swoole-process), you must set this value to `true`.
-
 ## ssl_cert_file / ssl_key_file
 
 Configures SSL tunnel encryption.
@@ -1844,6 +1841,53 @@ $http2->set([
   'http2_max_header_list_size' => '32K'
 ]);
 ```
+
+## http2_cancel_on_stream_reset
+
+Controls whether the request coroutine of an `HTTP/2` stream is canceled when the client resets the stream with an `RST_STREAM` frame. The default is `false`.
+
+When enabled, each `HTTP/2` request callback runs in its own coroutine. When the client resets a stream (for example, a browser cancels a request), `Swoole` throws a `Swoole\Coroutine\CanceledException` into that stream's request coroutine, stopping further pointless work (such as database queries or downstream service calls) and freeing server resources.
+
+**Example**
+
+```php
+<?php
+use Swoole\Coroutine\CanceledException;
+
+$http2->set([
+    'open_http2_protocol' => true,
+    'http2_cancel_on_stream_reset' => true,
+]);
+
+$http2->on('request', function (Swoole\Http\Request $request, Swoole\Http\Response $response) {
+    try {
+        Swoole\Coroutine::sleep(10); // Simulate a time-consuming operation
+        $response->end('done');
+    } catch (CanceledException $e) {
+        // The client canceled the request; clean up and return
+        var_dump($e->getReason());
+    }
+});
+```
+
+The associative array returned by `getReason()` contains the following fields:
+
+| Field | Description |
+|:---|:---|
+| `session_id` | The `fd` of the client connection |
+| `stream_id` | The `ID` of the reset stream |
+| `code` | The `HTTP/2` error code carried by the `RST_STREAM` frame, e.g. `8` for `CANCEL` |
+| `message` | Always `HTTP2 Stream Reset` |
+
+> [!WARNING]
+> **Notes**
+>
+> - Available since Swoole `v6.3`.
+> - Both [open_http2_protocol](/en/server/setting.html#open-http2-protocol) and [enable_coroutine](/en/server/setting.html#enable-coroutine) must be enabled, otherwise a configuration exception is thrown at startup.
+> - The request callback must catch `Swoole\Coroutine\CanceledException`, otherwise a `Fatal Error` occurs and the `worker` process exits.
+> - After a stream is reset, its `$response` is no longer writable: `isWritable()`, `write()`, and `end()` all return `false`.
+> - If a request is still queued due to the [worker_max_concurrency](/en/server/setting.html#worker-max-concurrency) limit, a received reset skips its callback entirely.
+> - Cancellation is only triggered by `RST_STREAM` frames; `GOAWAY` frames and connection close do not cancel request coroutines.
 
 ## document_root
 

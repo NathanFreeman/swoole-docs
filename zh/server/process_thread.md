@@ -130,7 +130,7 @@
 
 - 存在两次进程间通信开销：`master` 进程中的 `reactor` 线程与 `worker` 进程之间需通过 `unixSocket` 通信交换数据。
 
-- `SWOOLE_PROCESS` 模式不支持 PHP ZTS（Zend 线程安全）。若需在 `ZTS` 环境下运行，只能使用 `SWOOLE_BASE`/`SWOOLE_THREAD` 模式，或将 [single_thread](/zh/server/setting.html#single-thread) 参数设为 `true`。
+- 设置 [dispatch_func](/zh/server/setting.html#dispatch-func) 自定义分发策略后，会强制 [reactor_num](/zh/server/setting.html#reactor-num) 为 `1`，无法使用多 `reactor` 线程并行处理网络事件。
 
 ### SWOOLE_BASE
 
