@@ -231,6 +231,34 @@ $list->sort();
 var_dump($list->toArray());
 ```
 
+### find
+
+Finds the first element equal to the given value and returns its integer index.
+
+```php
+public function find(mixed $value): int|null
+```
+
+| Parameter | Description | Default |
+|:---|:---|:---|
+| `$value` | The value to search for | Required |
+
+**Return value**: Returns the integer index of the first matching element on a hit; returns `null` when not found.
+
+> [!NOTE]
+> Available since Swoole `v6.0.0`. Comparison is strict: types must match; integers, floats, and strings compare by value; `bool`/`null` match only the same value; arrays and objects never match. A read lock is held during the search, so it is thread-safe.
+
+**Example**
+
+```php
+<?php
+use Swoole\Thread\ArrayList;
+
+$list = new ArrayList(['a', 'b', 'c']);
+var_dump($list->find('b')); // int(1)
+var_dump($list->find('z')); // NULL
+```
+
 ## Map
 
 A concurrent `Map` structure that implements the `ArrayAccess` and `Countable` interfaces.
@@ -541,6 +569,36 @@ $map['a'] = 1;
 $map->sort();
 
 var_dump($map->keys(), $map->values());
+```
+
+### find
+
+Finds the first element equal to the given value and returns its key.
+
+```php
+public function find(mixed $value): mixed
+```
+
+| Parameter | Description | Default |
+|:---|:---|:---|
+| `$value` | The value to search for | Required |
+
+**Return value**: Returns the key of the first matching element (a string key or an integer index) on a hit; returns `null` when not found.
+
+> [!NOTE]
+> Available since Swoole `v6.0.0`. The comparison rules are the same as [ArrayList::find](#find): types must match; integers, floats, and strings compare by value; arrays and objects never match. A read lock is held during the search, so it is thread-safe.
+
+**Example**
+
+```php
+<?php
+use Swoole\Thread\Map;
+
+$map = new Map();
+$map['a'] = 1;
+$map['b'] = 2;
+var_dump($map->find(2)); // string(1) "b"
+var_dump($map->find(3)); // NULL
 ```
 
 ## Queue

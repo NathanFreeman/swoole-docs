@@ -418,6 +418,31 @@ var_dump(json_decode(substr($str, 4, $l), true));
 var_dump(swoole_substr_json_decode($str, 4, $l, true));
 ```
 
+## 哈希計算
+
+### swoole_hashcode
+
+計算字符串的哈希值，可用於用戶態的負載均衡分發、一致性哈希等場景。
+
+```php
+function swoole_hashcode(string $data, int $type = 0): false|int
+```
+
+| 參數 | 說明 | 默認值 |
+|:---|:---|:---|
+| `$data` | 要計算哈希的字符串 | 必填 |
+| `$type` | 哈希算法：`0` 爲 `PHP` 內核字符串哈希（與數組鍵哈希一致，`64` 位系統下結果可能爲負數）；`1` 爲 `Jenkins one-at-a-time` 哈希（`32` 位無符號範圍）；其他值返回 `false` | `0` |
+
+**返回值**：哈希值整數，`$type` 不合法時返回 `false`。
+
+**示例**
+
+```php
+<?php
+var_dump(swoole_hashcode('hello'));        // PHP 內核哈希
+var_dump(swoole_hashcode('hello', 1));     // Jenkins one-at-a-time
+```
+
 ## 異步與協程
 
 ### swoole_async_set

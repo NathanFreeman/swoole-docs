@@ -502,3 +502,37 @@ The following options are also passed via `$flags`; see the table for descriptio
 | `SWOOLE_HOOK_PDO_ORACLE` | Hooks the [pdo_oci extension](https://www.php.net/manual/en/ref.pdo-oci.php) |
 | `SWOOLE_HOOK_PDO_SQLITE` | Hooks the [pdo_sqlite extension](https://www.php.net/manual/en/ref.pdo-sqlite.php) |
 | `SWOOLE_HOOK_PDO_FIREBIRD` | Hooks the [pdo_firebird extension](https://www.php.net/manual/en/ref.pdo-firebird.php) |
+
+## Compile-Time Coroutinization: FTP and SSH2
+
+`FTP` and `SSH2` coroutinization differs from the `SWOOLE_HOOK_*` options above: there is **no runtime switch**. Instead, the native `PHP` extension functions are replaced at `Swoole` compile time.
+
+| Compile option | Description |
+|:---|:---|
+| `--enable-swoole-ftp` | Enables coroutinization of the `ftp` functions, replacing the native `ext-ftp` |
+| `--with-swoole-ssh2` | Enables coroutinization of the `ssh2` functions, replacing the native `ext-ssh2`; requires `libssh2 >= 1.9.0` |
+
+> [!NOTE]
+> Available since Swoole `v6.2.0`. `ssh2_send_signal` requires `libssh2 >= 1.11`. See [Build Options](/en/start/install.html#build-options) for details.
+
+> [!WARNING]
+> **Mutually exclusive** with the native extensions: when these features are enabled, `PHP`'s `ext-ftp` and `ext-ssh2` extensions must be disabled, otherwise `Swoole` cannot be loaded.
+
+**Behavior**
+
+- When `ftp_*` / `ssh2_*` functions are called inside a coroutine, the underlying `I/O` is automatically coroutinized and does not block the event loop.
+- When called outside a coroutine, they automatically fall back to ordinary synchronous blocking system calls, behaving like the native extensions.
+- Function signatures match the native extensions (`PHP 8.1+` style; `FTP` connections are `FTP\Connection` objects). `ssh2` additionally provides functions not present in the native extension, such as `ssh2_disconnect`, `ssh2_set_timeout`, `ssh2_keepalive_config`, and `ssh2_keepalive_send`, but does **not** provide `ssh2_poll`.
+
+**Example**
+
+```php
+<?php
+Co\run(function () {
+    $ssh = ssh2_connect('127.0.0.1', 22);
+    ssh2_auth_password($ssh, 'user', 'password');
+    $stream = ssh2_exec($ssh, 'echo "hello"');
+    stream_set_blocking($stream, true);
+    echo stream_get_contents($stream);
+});
+```

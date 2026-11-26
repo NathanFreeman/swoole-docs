@@ -249,6 +249,80 @@ $server->start();
 > `user進程` 在代碼中使用 `while(true)` 或者創建一個事件循環（例如定時器）來維持運行，否則用戶進程會不停地退出重啓。
 > 必須在執行 [start](/zh-hant/server/methods.html#start) 方法之前使用 `addProcess`，否則 `user` 進程不會啓動。
 
+## addCommand
+
+註冊一個自定義服務器命令，供其他進程通過 [command](#command) 方法調用。必須在 [start](#start) 之前調用。
+
+```php
+public function addCommand(string $name, int $accepted_process_types, callable $callback): bool
+```
+
+| 參數 | 說明 | 默認值 |
+|:---|:---|:---|
+| `$name` | 命令名稱 | 必填 |
+| `$accepted_process_types` | 允許處理該命令的進程類型位掩碼，可通過 `\|` 組合，取值見下表 | 必填 |
+| `$callback` | 命令處理回調函數 | 必填 |
+
+| 常量 | 說明 |
+|:---|:---|
+| `SWOOLE_SERVER_COMMAND_MASTER` | `master` 進程 |
+| `SWOOLE_SERVER_COMMAND_MANAGER` | `manager` 進程 |
+| `SWOOLE_SERVER_COMMAND_EVENT_WORKER` | 事件 `worker` 進程（別名 `SWOOLE_SERVER_COMMAND_WORKER`） |
+| `SWOOLE_SERVER_COMMAND_TASK_WORKER` | `task` 進程 |
+| `SWOOLE_SERVER_COMMAND_REACTOR_THREAD` | `reactor` 線程，**不允許**用於用戶註冊的命令 |
+
+回調函數簽名：
+
+```php
+function (Swoole\Server $server, string $message): string {}
+```
+
+`$message` 是調用方傳入的 `$data` 經 `json_encode` 後的字符串。回調必須返回字符串（通常將結果 `json_encode` 後返回）；返回其他類型時調用方會收到 `{"data":"wrong return type","code":-2}`，回調拋出異常時收到 `{"data":"failed to call function","code":-1}`。
+
+**返回值**：註冊成功返回 `true`，失敗返回 `false`。
+
+> [!NOTE]
+> Swoole 版本 >= `v4.8.0` 可用。服務器已啓動後調用會產生警告並返回 `false`；`$accepted_process_types` 包含 `SWOOLE_SERVER_COMMAND_REACTOR_THREAD` 時同樣返回 `false`。
+
+**示例**
+
+```php
+<?php
+use Swoole\Server;
+
+$server = new Server('127.0.0.1', 9501);
+$server->addCommand('test_getpid', SWOOLE_SERVER_COMMAND_MASTER | SWOOLE_SERVER_COMMAND_EVENT_WORKER,
+    function (Server $server, string $message) {
+        return json_encode(['pid' => posix_getpid()]);
+    });
+$server->on('start', function (Server $server) {
+    $result = $server->command('test_getpid', 0, SWOOLE_SERVER_COMMAND_MASTER, ['type' => 'master']);
+    var_dump($result);
+});
+$server->start();
+```
+
+## command
+
+向指定進程發送命令並等待響應，底層通過進程間管道投遞。
+
+```php
+public function command(string $name, int $process_id, int $process_type, mixed $data, bool $json_decode = true): false|string|array
+```
+
+| 參數 | 說明 | 默認值 |
+|:---|:---|:---|
+| `$name` | 命令名稱，必須是 [addCommand](#addcommand) 註冊過的命令 | 必填 |
+| `$process_id` | 目標進程 `ID` | 必填 |
+| `$process_type` | 目標進程類型，取值與 [addCommand](#addcommand) 的常量相同，單選 | 必填 |
+| `$data` | 發送給命令回調的數據，底層會先 `json_encode` | 必填 |
+| `$json_decode` | 爲 `true` 時對響應 `json_decode`（關聯數組）後返回，爲 `false` 時返回原始字符串 | `true` |
+
+**返回值**：命令執行成功返回響應（`array` 或 `string`）；命令未註冊、進程類型不在命令接受的掩碼內、進程 `ID` 越界、投遞失敗或響應解碼失敗時返回 `false`。
+
+> [!WARNING]
+> 必須在服務器啓動後調用。`SWOOLE_PROCESS` 模式下只能在 `master` 進程調用，`SWOOLE_BASE` 模式下只能在 `0` 號 `worker` 進程調用。在協程中調用時當前協程會掛起等待響應。
+
 ## start
 
 啓動服務器。
@@ -1711,4 +1785,17 @@ $server->start();
 
 > [!NOTE]
 > `format` 方法是 `Swoole\Redis\Server` 類的專屬方法。
+
+## getLastError
+
+獲取最近一次 `Swoole` 底層錯誤的錯誤碼，等同於 [swoole_last_error()](/zh-hant/functions.html#swoole-last-error)。
+
+```php
+public function getLastError(): int
+```
+
+**返回值**：`Swoole` 底層錯誤碼整數。可使用 [swoole_strerror](/zh-hant/functions.html#swoole-strerror) 將錯誤碼轉換爲錯誤信息，使用 [swoole_clear_error](/zh-hant/functions.html#swoole-clear-error) 清零。
+
+> [!TIP]
+> 與 [swoole_errno()](/zh-hant/functions.html#swoole-errno) 不同，`getLastError` 返回的是 `Swoole` 內部錯誤碼，而不是操作系統 `errno`。
 

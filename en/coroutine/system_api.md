@@ -73,6 +73,9 @@ run(function () {
 > [!NOTE]
 > Available since Swoole `4.4.3+`. The underlying implementation reads `/etc/resolv.conf` to obtain the `DNS` server address. The `$type` parameter is available since Swoole `4.7`; before that, only `AF_INET` (`IPv4`) resolution was supported.
 
+> [!TIP]
+> The global function `swoole_async_dns_lookup_coro()` is an alias of this method, with identical parameters.
+
 ### exec
 
 Executes a `shell` command, with coroutine scheduling performed automatically at the underlying level.

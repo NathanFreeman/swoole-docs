@@ -231,6 +231,34 @@ $list->sort();
 var_dump($list->toArray());
 ```
 
+### find
+
+查找第一个与给定值相等的元素，返回其整数下标。
+
+```php
+public function find(mixed $value): int|null
+```
+
+| 参数 | 说明 | 默认值 |
+|:---|:---|:---|
+| `$value` | 要查找的值 | 必填 |
+
+**返回值**：命中返回第一个匹配元素的整数下标，找不到返回 `null`。
+
+> [!NOTE]
+> Swoole 版本 >= `v6.0.0` 可用。比较是严格的：类型必须相同，整数、浮点数、字符串按值相等，`bool`/`null` 仅匹配同值，数组和对象一律不匹配。查找期间持有读锁，线程安全。
+
+**示例**
+
+```php
+<?php
+use Swoole\Thread\ArrayList;
+
+$list = new ArrayList(['a', 'b', 'c']);
+var_dump($list->find('b')); // int(1)
+var_dump($list->find('z')); // NULL
+```
+
 ## Map
 
 并发的 `Map` 结构，实现了 `ArrayAccess` 和 `Countable` 接口。
@@ -541,6 +569,36 @@ $map['a'] = 1;
 $map->sort();
 
 var_dump($map->keys(), $map->values());
+```
+
+### find
+
+查找第一个与给定值相等的元素，返回其键名。
+
+```php
+public function find(mixed $value): mixed
+```
+
+| 参数 | 说明 | 默认值 |
+|:---|:---|:---|
+| `$value` | 要查找的值 | 必填 |
+
+**返回值**：命中返回第一个匹配元素的键（字符串键或整数索引），找不到返回 `null`。
+
+> [!NOTE]
+> Swoole 版本 >= `v6.0.0` 可用。比较规则与 [ArrayList::find](#find) 相同：类型必须相同，整数、浮点数、字符串按值相等，数组和对象一律不匹配。查找期间持有读锁，线程安全。
+
+**示例**
+
+```php
+<?php
+use Swoole\Thread\Map;
+
+$map = new Map();
+$map['a'] = 1;
+$map['b'] = 2;
+var_dump($map->find(2)); // string(1) "b"
+var_dump($map->find(3)); // NULL
 ```
 
 ## Queue

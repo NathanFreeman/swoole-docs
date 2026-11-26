@@ -418,6 +418,31 @@ var_dump(json_decode(substr($str, 4, $l), true));
 var_dump(swoole_substr_json_decode($str, 4, $l, true));
 ```
 
+## Hash Calculation
+
+### swoole_hashcode
+
+Computes the hash of a string, useful for user-space load-balancing dispatch, consistent hashing, and similar scenarios.
+
+```php
+function swoole_hashcode(string $data, int $type = 0): false|int
+```
+
+| Parameter | Description | Default |
+|:---|:---|:---|
+| `$data` | The string to hash | Required |
+| `$type` | Hash algorithm: `0` is the `PHP` kernel string hash (same as the array-key hash; the result may be negative on `64`-bit systems); `1` is the `Jenkins one-at-a-time` hash (in the `32`-bit unsigned range); other values return `false` | `0` |
+
+**Return value**: Returns the hash as an integer; returns `false` when `$type` is invalid.
+
+**Example**
+
+```php
+<?php
+var_dump(swoole_hashcode('hello'));        // PHP kernel hash
+var_dump(swoole_hashcode('hello', 1));     // Jenkins one-at-a-time
+```
+
 ## Async and Coroutine
 
 ### swoole_async_set

@@ -249,6 +249,80 @@ $server->start();
 > `user进程` 在代码中使用 `while(true)` 或者创建一个事件循环（例如定时器）来维持运行，否则用户进程会不停地退出重启。
 > 必须在执行 [start](/zh/server/methods.html#start) 方法之前使用 `addProcess`，否则 `user` 进程不会启动。
 
+## addCommand
+
+注册一个自定义服务器命令，供其他进程通过 [command](#command) 方法调用。必须在 [start](#start) 之前调用。
+
+```php
+public function addCommand(string $name, int $accepted_process_types, callable $callback): bool
+```
+
+| 参数 | 说明 | 默认值 |
+|:---|:---|:---|
+| `$name` | 命令名称 | 必填 |
+| `$accepted_process_types` | 允许处理该命令的进程类型位掩码，可通过 `\|` 组合，取值见下表 | 必填 |
+| `$callback` | 命令处理回调函数 | 必填 |
+
+| 常量 | 说明 |
+|:---|:---|
+| `SWOOLE_SERVER_COMMAND_MASTER` | `master` 进程 |
+| `SWOOLE_SERVER_COMMAND_MANAGER` | `manager` 进程 |
+| `SWOOLE_SERVER_COMMAND_EVENT_WORKER` | 事件 `worker` 进程（别名 `SWOOLE_SERVER_COMMAND_WORKER`） |
+| `SWOOLE_SERVER_COMMAND_TASK_WORKER` | `task` 进程 |
+| `SWOOLE_SERVER_COMMAND_REACTOR_THREAD` | `reactor` 线程，**不允许**用于用户注册的命令 |
+
+回调函数签名：
+
+```php
+function (Swoole\Server $server, string $message): string {}
+```
+
+`$message` 是调用方传入的 `$data` 经 `json_encode` 后的字符串。回调必须返回字符串（通常将结果 `json_encode` 后返回）；返回其他类型时调用方会收到 `{"data":"wrong return type","code":-2}`，回调抛出异常时收到 `{"data":"failed to call function","code":-1}`。
+
+**返回值**：注册成功返回 `true`，失败返回 `false`。
+
+> [!NOTE]
+> Swoole 版本 >= `v4.8.0` 可用。服务器已启动后调用会产生警告并返回 `false`；`$accepted_process_types` 包含 `SWOOLE_SERVER_COMMAND_REACTOR_THREAD` 时同样返回 `false`。
+
+**示例**
+
+```php
+<?php
+use Swoole\Server;
+
+$server = new Server('127.0.0.1', 9501);
+$server->addCommand('test_getpid', SWOOLE_SERVER_COMMAND_MASTER | SWOOLE_SERVER_COMMAND_EVENT_WORKER,
+    function (Server $server, string $message) {
+        return json_encode(['pid' => posix_getpid()]);
+    });
+$server->on('start', function (Server $server) {
+    $result = $server->command('test_getpid', 0, SWOOLE_SERVER_COMMAND_MASTER, ['type' => 'master']);
+    var_dump($result);
+});
+$server->start();
+```
+
+## command
+
+向指定进程发送命令并等待响应，底层通过进程间管道投递。
+
+```php
+public function command(string $name, int $process_id, int $process_type, mixed $data, bool $json_decode = true): false|string|array
+```
+
+| 参数 | 说明 | 默认值 |
+|:---|:---|:---|
+| `$name` | 命令名称，必须是 [addCommand](#addcommand) 注册过的命令 | 必填 |
+| `$process_id` | 目标进程 `ID` | 必填 |
+| `$process_type` | 目标进程类型，取值与 [addCommand](#addcommand) 的常量相同，单选 | 必填 |
+| `$data` | 发送给命令回调的数据，底层会先 `json_encode` | 必填 |
+| `$json_decode` | 为 `true` 时对响应 `json_decode`（关联数组）后返回，为 `false` 时返回原始字符串 | `true` |
+
+**返回值**：命令执行成功返回响应（`array` 或 `string`）；命令未注册、进程类型不在命令接受的掩码内、进程 `ID` 越界、投递失败或响应解码失败时返回 `false`。
+
+> [!WARNING]
+> 必须在服务器启动后调用。`SWOOLE_PROCESS` 模式下只能在 `master` 进程调用，`SWOOLE_BASE` 模式下只能在 `0` 号 `worker` 进程调用。在协程中调用时当前协程会挂起等待响应。
+
 ## start
 
 启动服务器。
@@ -1711,4 +1785,17 @@ $server->start();
 
 > [!NOTE]
 > `format` 方法是 `Swoole\Redis\Server` 类的专属方法。
+
+## getLastError
+
+获取最近一次 `Swoole` 底层错误的错误码，等同于 [swoole_last_error()](/zh/functions.html#swoole-last-error)。
+
+```php
+public function getLastError(): int
+```
+
+**返回值**：`Swoole` 底层错误码整数。可使用 [swoole_strerror](/zh/functions.html#swoole-strerror) 将错误码转换为错误信息，使用 [swoole_clear_error](/zh/functions.html#swoole-clear-error) 清零。
+
+> [!TIP]
+> 与 [swoole_errno()](/zh/functions.html#swoole-errno) 不同，`getLastError` 返回的是 `Swoole` 内部错误码，而不是操作系统 `errno`。
 

@@ -302,6 +302,41 @@ while(true) {
 > [!IMPORTANT]
 > This function is used for compatibility with frameworks such as `Amp`. Such frameworks need to control the `Reactor` event loop themselves internally; if `Swoole\Event::wait()` is used directly, `Swoole`'s underlying layer holds control indefinitely and cannot return it to the framework.
 
+### exit
+
+Exits the event loop. Clears all timers and stops the running event loop, causing [wait](#wait) to return.
+
+```php
+public static function exit(): void
+```
+
+**Example**
+
+```php
+<?php
+use Swoole\Event;
+use Swoole\Timer;
+
+Timer::tick(1000, function () {
+    echo "hello\n";
+    Event::exit(); // Exit after the first invocation
+});
+
+Event::wait();
+echo "Finish\n";
+```
+
+### rshutdown
+
+The event-loop cleanup function for request shutdown. `Swoole` automatically registers it as a `PHP` `shutdown` function, so manual calls are generally unnecessary.
+
+```php
+public static function rshutdown(): void
+```
+
+> [!NOTE]
+> Relying on the event loop to wait during a `shutdown` function is deprecated (`Event::wait() in shutdown function is deprecated`). Complete the event loop in the main script body whenever possible.
+
 ### Callback Function Signatures
 
 The callback function signatures of `Swoole\Event::add()` and `Swoole\Event::set()`.
@@ -323,6 +358,24 @@ function(mixed $socket) {}
 |`SWOOLE_EVENT_READ`                     | Listen for readable events|
 |`SWOOLE_EVENT_WRITE`                    | Listen for writable events|
 |`SWOOLE_EVENT_READ \| SWOOLE_EVENT_WRITE` | Listen for readable or writable events|
+
+### Aliases
+
+In addition to the object-oriented names, function-style aliases are provided with identical parameters.
+
+| Object-oriented | Function-style |
+|:---|:---|
+| `Swoole\Event::add()` | `swoole_event_add()` |
+| `Swoole\Event::set()` | `swoole_event_set()` |
+| `Swoole\Event::isset()` | `swoole_event_isset()` |
+| `Swoole\Event::del()` | `swoole_event_del()` |
+| `Swoole\Event::write()` | `swoole_event_write()` |
+| `Swoole\Event::wait()` | `swoole_event_wait()` |
+| `Swoole\Event::defer()` | `swoole_event_defer()` |
+| `Swoole\Event::cycle()` | `swoole_event_cycle()` |
+| `Swoole\Event::dispatch()` | `swoole_event_dispatch()` |
+| `Swoole\Event::exit()` | `swoole_event_exit()` |
+| `Swoole\Event::rshutdown()` | `swoole_event_rshutdown()` |
 
 ### Event Priority
 

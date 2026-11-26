@@ -25,6 +25,7 @@ export default defineConfig({
                         items: [
                             {text: '什么是协程', link: '/zh/coroutine/coroutine.md'},
                             {text: '协程容器', link: '/zh/coroutine/container.md'},
+                            {text: '协程调度器', link: '/zh/coroutine/scheduler.md'},
                             {text: '一键协程化', link: '/zh/coroutine/hook.md'},
                             {text: '协程方法', link: '/zh/coroutine/coroutine_api.md'},
                             {text: '系统方法', link: '/zh/coroutine/system_api.md'},
@@ -136,6 +137,19 @@ export default defineConfig({
                         ]
                     },
                     {
+                        text: '名字解析器',
+                        collapsed: true,
+                        items: [
+                            {text: '概述', link: '/zh/name_resolver/overview.md'},
+                            {text: '使用示例', link: '/zh/name_resolver/examples.md'},
+                            {text: '注册与调用', link: '/zh/name_resolver/functions.md'},
+                            {text: 'Context', link: '/zh/name_resolver/context.md'},
+                            {text: '自定义解析器', link: '/zh/name_resolver/resolver.md'},
+                            {text: 'Cluster', link: '/zh/name_resolver/cluster.md'},
+                            {text: '内置解析器', link: '/zh/name_resolver/builtin.md'},
+                        ]
+                    },
+                    {
                         text: '连接池',
                         collapsed: true,
                         items: [
@@ -185,6 +199,7 @@ export default defineConfig({
                         items: [
                             {text: '什麼是協程', link: '/zh-hant/coroutine/coroutine.md'},
                             {text: '協程容器', link: '/zh-hant/coroutine/container.md'},
+                            {text: '協程調度器', link: '/zh-hant/coroutine/scheduler.md'},
                             {text: '一鍵協程化', link: '/zh-hant/coroutine/hook.md'},
                             {text: '協程方法', link: '/zh-hant/coroutine/coroutine_api.md'},
                             {text: '系統方法', link: '/zh-hant/coroutine/system_api.md'},
@@ -295,6 +310,19 @@ export default defineConfig({
                         ]
                     },
                     {
+                        text: '名字解析器',
+                        collapsed: true,
+                        items: [
+                            {text: '概述', link: '/zh-hant/name_resolver/overview.md'},
+                            {text: '使用示例', link: '/zh-hant/name_resolver/examples.md'},
+                            {text: '註冊與調用', link: '/zh-hant/name_resolver/functions.md'},
+                            {text: 'Context', link: '/zh-hant/name_resolver/context.md'},
+                            {text: '自定義解析器', link: '/zh-hant/name_resolver/resolver.md'},
+                            {text: 'Cluster', link: '/zh-hant/name_resolver/cluster.md'},
+                            {text: '內置解析器', link: '/zh-hant/name_resolver/builtin.md'},
+                        ]
+                    },
+                    {
                         text: '連接池',
                         collapsed: true,
                         items: [
@@ -341,6 +369,7 @@ export default defineConfig({
                         items: [
                             {text: 'What is a Coroutine', link: '/en/coroutine/coroutine.md'},
                             {text: 'Coroutine Container', link: '/en/coroutine/container.md'},
+                            {text: 'Coroutine Scheduler', link: '/en/coroutine/scheduler.md'},
                             {text: 'Coroutine Hooks', link: '/en/coroutine/hook.md'},
                             {text: 'Coroutine Methods', link: '/en/coroutine/coroutine_api.md'},
                             {text: 'System Methods', link: '/en/coroutine/system_api.md'},
@@ -448,6 +477,19 @@ export default defineConfig({
                             {text: 'Thread Pool', link: '/en/thread/pool.md'},
                             {text: 'Concurrent Containers', link: '/en/thread/container.md'},
                             {text: 'Synchronization Barrier', link: '/en/thread/barrier.md'},
+                        ]
+                    },
+                    {
+                        text: 'Name Resolver',
+                        collapsed: true,
+                        items: [
+                            {text: 'Overview', link: '/en/name_resolver/overview.md'},
+                            {text: 'Usage Examples', link: '/en/name_resolver/examples.md'},
+                            {text: 'Registration and Lookup', link: '/en/name_resolver/functions.md'},
+                            {text: 'Context', link: '/en/name_resolver/context.md'},
+                            {text: 'Custom Resolver', link: '/en/name_resolver/resolver.md'},
+                            {text: 'Cluster', link: '/en/name_resolver/cluster.md'},
+                            {text: 'Built-in Resolvers', link: '/en/name_resolver/builtin.md'},
                         ]
                     },
                     {

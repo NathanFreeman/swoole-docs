@@ -41,6 +41,7 @@ run(function () {
 
 > [!TIP]
 > `go` 是该方法的别名，通过 `use function Swoole\Coroutine\go` 引入后即可直接调用 `go()` 函数创建协程，参数说明和 `create` 方法一致。在 `php.ini` 中设置 `swoole.use_shortname=On` 时，会额外注册全局的 `go()` 函数，无需引入即可直接调用。
+> 全局函数 `swoole_coroutine_create()` 也是该方法的别名，参数完全一致。
 
 ### defer
 
@@ -74,6 +75,9 @@ run(function () {
 > [!NOTE]
 > 就算抛出了异常，通过 `defer` 注册的函数也会被执行。
 > 它的调用顺序是逆序的（先进后出），即先注册 `defer` 的后执行。逆序符合资源释放的正确逻辑：后申请的资源可能是基于先申请的资源的，如果先释放先申请的资源，后申请的资源可能就难以释放。
+
+> [!TIP]
+> 全局函数 `swoole_coroutine_defer()` 是该方法的别名，参数完全一致。在 `php.ini` 中设置 `swoole.use_shortname=On` 时，还会注册全局的 `defer()` 函数。
 
 ### exists
 

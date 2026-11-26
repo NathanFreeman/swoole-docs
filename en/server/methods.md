@@ -249,6 +249,80 @@ $server->start();
 > A `user process` must keep running by using `while(true)` in the code or creating an event loop (for example a timer); otherwise the user process will keep exiting and restarting.
 > `addProcess` must be used before calling the [start](/en/server/methods.html#start) method; otherwise the `user` process will not start.
 
+## addCommand
+
+Registers a custom server command that can be invoked from other processes via the [command](#command) method. Must be called before [start](#start).
+
+```php
+public function addCommand(string $name, int $accepted_process_types, callable $callback): bool
+```
+
+| Parameter | Description | Default |
+|:---|:---|:---|
+| `$name` | The command name | Required |
+| `$accepted_process_types` | Bitmask of process types allowed to handle this command, combinable with `\|`, see the table below | Required |
+| `$callback` | The command handler callback | Required |
+
+| Constant | Description |
+|:---|:---|
+| `SWOOLE_SERVER_COMMAND_MASTER` | The `master` process |
+| `SWOOLE_SERVER_COMMAND_MANAGER` | The `manager` process |
+| `SWOOLE_SERVER_COMMAND_EVENT_WORKER` | Event `worker` processes (alias `SWOOLE_SERVER_COMMAND_WORKER`) |
+| `SWOOLE_SERVER_COMMAND_TASK_WORKER` | `task` processes |
+| `SWOOLE_SERVER_COMMAND_REACTOR_THREAD` | `reactor` threads, **not allowed** for user-registered commands |
+
+Callback signature:
+
+```php
+function (Swoole\Server $server, string $message): string {}
+```
+
+`$message` is the caller's `$data` after `json_encode`. The callback must return a string (typically the result after `json_encode`); returning any other type makes the caller receive `{"data":"wrong return type","code":-2}`, and an exception thrown by the callback yields `{"data":"failed to call function","code":-1}`.
+
+**Return value**: Returns `true` on successful registration, `false` on failure.
+
+> [!NOTE]
+> Available since Swoole `v4.8.0`. Calling it after the server has started produces a warning and returns `false`; including `SWOOLE_SERVER_COMMAND_REACTOR_THREAD` in `$accepted_process_types` also returns `false`.
+
+**Example**
+
+```php
+<?php
+use Swoole\Server;
+
+$server = new Server('127.0.0.1', 9501);
+$server->addCommand('test_getpid', SWOOLE_SERVER_COMMAND_MASTER | SWOOLE_SERVER_COMMAND_EVENT_WORKER,
+    function (Server $server, string $message) {
+        return json_encode(['pid' => posix_getpid()]);
+    });
+$server->on('start', function (Server $server) {
+    $result = $server->command('test_getpid', 0, SWOOLE_SERVER_COMMAND_MASTER, ['type' => 'master']);
+    var_dump($result);
+});
+$server->start();
+```
+
+## command
+
+Sends a command to the specified process and waits for the response; delivery uses inter-process pipes under the hood.
+
+```php
+public function command(string $name, int $process_id, int $process_type, mixed $data, bool $json_decode = true): false|string|array
+```
+
+| Parameter | Description | Default |
+|:---|:---|:---|
+| `$name` | The command name, must have been registered via [addCommand](#addcommand) | Required |
+| `$process_id` | The target process `ID` | Required |
+| `$process_type` | The target process type, same constants as [addCommand](#addcommand), single choice | Required |
+| `$data` | Data sent to the command callback, `json_encode`d by the underlying layer first | Required |
+| `$json_decode` | When `true`, the response is `json_decode`d (associative array) before being returned; when `false`, the raw string is returned | `true` |
+
+**Return value**: Returns the response (`array` or `string`) on success; returns `false` when the command is not registered, the process type is not in the command's accepted mask, the process `ID` is out of range, delivery fails, or response decoding fails.
+
+> [!WARNING]
+> Must be called after the server has started. In `SWOOLE_PROCESS` mode it can only be called in the `master` process; in `SWOOLE_BASE` mode only in `worker` process `0`. When called inside a coroutine, the current coroutine suspends while waiting for the response.
+
 ## start
 
 Starts the server.
@@ -1711,3 +1785,16 @@ $server->start();
 
 > [!NOTE]
 > The `format` method is exclusive to the `Swoole\Redis\Server` class.
+
+## getLastError
+
+Gets the error code of the most recent `Swoole` underlying error, equivalent to [swoole_last_error()](/en/functions.html#swoole-last-error).
+
+```php
+public function getLastError(): int
+```
+
+**Return value**: The `Swoole` underlying error code as an integer. Use [swoole_strerror](/en/functions.html#swoole-strerror) to convert the error code to a message, and [swoole_clear_error](/en/functions.html#swoole-clear-error) to clear it.
+
+> [!TIP]
+> Unlike [swoole_errno()](/en/functions.html#swoole-errno), `getLastError` returns `Swoole`'s internal error code rather than the operating system `errno`.

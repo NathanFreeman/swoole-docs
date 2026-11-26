@@ -41,6 +41,7 @@ run(function () {
 
 > [!TIP]
 > `go` is an alias of this method. Import it with `use function Swoole\Coroutine\go` to call the `go()` function directly to create coroutines; its parameters are the same as those of the `create` method. When `swoole.use_shortname=On` is set in `php.ini`, a global `go()` function is additionally registered, which can be called directly without importing.
+> The global function `swoole_coroutine_create()` is also an alias of this method, with identical parameters.
 
 ### defer
 
@@ -74,6 +75,9 @@ run(function () {
 > [!NOTE]
 > Functions registered with `defer` are executed even if an exception is thrown.
 > They are called in reverse order (last in, first out): a `defer` registered earlier runs later. Reverse order matches the correct logic for releasing resources: resources acquired later may depend on resources acquired earlier, so releasing the earlier resources first could make the later ones difficult to release.
+
+> [!TIP]
+> The global function `swoole_coroutine_defer()` is an alias of this method, with identical parameters. When `swoole.use_shortname=On` is set in `php.ini`, a global `defer()` function is additionally registered.
 
 ### exists
 

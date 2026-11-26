@@ -292,6 +292,40 @@ if (empty(Thread::getArguments())) {
 }
 ```
 
+### getResult
+
+Gets the return value of the thread.
+
+```php
+public function getResult(): mixed
+```
+
+**Return value**: Returns a fresh copy of the thread's return value after unserialization; returns `null` when the thread has no return value, threw an exception, or exited early.
+
+> [!NOTE]
+> Available since Swoole `v6.3.0`, and only effective on `PHP >= 8.4` (on `PHP 8.2`/`8.3` it always returns `null`).
+
+> [!WARNING]
+> Calling it before the thread has exited throws an `Error`; [join](#join) must be called first. After the thread exits it can be called repeatedly and safely. Difference from [getExitStatus](#getexitstatus): `getExitStatus` returns the exit status code, used to distinguish success from failure; `getResult` returns business data.
+
+**Example**
+
+```php
+<?php
+use Swoole\Thread;
+
+$args = Thread::getArguments();
+
+if (empty($args)) {
+    $thread = new Thread(__FILE__, 'child');
+    $thread->join();
+    var_dump($thread->getResult()); // string(5) "hello"
+} else {
+    // The child thread script's return value is serialized and stored
+    return 'hello';
+}
+```
+
 ### isAlive
 
 Checks whether the thread is alive. This function can always be called, regardless of whether the thread has executed `detach()` or `join()`.

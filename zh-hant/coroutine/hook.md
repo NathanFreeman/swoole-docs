@@ -502,3 +502,37 @@ run(function () {
 | `SWOOLE_HOOK_PDO_ORACLE` | 協程化 [pdo_oci 擴展](https://www.php.net/manual/en/ref.pdo-oci.php) |
 | `SWOOLE_HOOK_PDO_SQLITE` | 協程化 [pdo_sqlite 擴展](https://www.php.net/manual/en/ref.pdo-sqlite.php) |
 | `SWOOLE_HOOK_PDO_FIREBIRD` | 協程化 [pdo_firebird 擴展](https://www.php.net/manual/en/ref.pdo-firebird.php) |
+
+## 編譯期協程化：FTP 與 SSH2
+
+`FTP` 和 `SSH2` 的協程化與上述 `SWOOLE_HOOK_*` 選項不同：**沒有運行時開關**，而是在編譯 `Swoole` 時直接替換 `PHP` 原生擴展的函數實現。
+
+| 編譯選項 | 說明 |
+|:---|:---|
+| `--enable-swoole-ftp` | 啓用 `ftp` 函數的協程化，替換原生 `ext-ftp` |
+| `--with-swoole-ssh2` | 啓用 `ssh2` 函數的協程化，替換原生 `ext-ssh2`，依賴 `libssh2 >= 1.9.0` |
+
+> [!NOTE]
+> Swoole 版本 >= `v6.2.0` 可用。`ssh2_send_signal` 需要 `libssh2 >= 1.11`。詳見 [編譯選項詳解](/zh-hant/start/install.html#編譯選項詳解)。
+
+> [!WARNING]
+> 與原生擴展**互斥**：啓用這兩項特性時，必須禁用 `PHP` 的 `ext-ftp`、`ext-ssh2` 擴展，否則無法加載 `Swoole`。
+
+**行爲**
+
+- 在協程內調用 `ftp_*`、`ssh2_*` 函數時，底層 `I/O` 自動協程化，不會阻塞事件循環。
+- 在協程外調用時，自動回退爲普通的同步阻塞系統調用，行爲與原生擴展一致。
+- 函數簽名與原生擴展保持一致（`PHP 8.1+` 風格，`FTP` 連接爲 `FTP\Connection` 對象）；`ssh2` 額外提供了 `ssh2_disconnect`、`ssh2_set_timeout`、`ssh2_keepalive_config`、`ssh2_keepalive_send` 等原生擴展沒有的函數，但**不提供** `ssh2_poll`。
+
+**示例**
+
+```php
+<?php
+Co\run(function () {
+    $ssh = ssh2_connect('127.0.0.1', 22);
+    ssh2_auth_password($ssh, 'user', 'password');
+    $stream = ssh2_exec($ssh, 'echo "hello"');
+    stream_set_blocking($stream, true);
+    echo stream_get_contents($stream);
+});
+```

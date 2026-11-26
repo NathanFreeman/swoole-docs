@@ -348,6 +348,19 @@ $server->start();
 > - If the client sets `Accept-Encoding`, the server must not set a `Content-Length` response; when `Swoole` detects this, it ignores the `Content-Length` value and emits a warning.
 > - After setting a `Content-Length` response, [write](/en/server/class/response.html#write) must not be called; when `Swoole` detects this, it ignores the `Content-Length` value and emits a warning.
 
+### initHeader
+
+Initializes the [header](#header), [cookie](#cookie), and [trailer](#trailer) properties as empty arrays.
+
+```php
+public function initHeader(): bool
+```
+
+**Return value**: Returns `true` on successful initialization; returns `false` when the response has already been [end](#end)ed or [detach](#detach)ed (the context is no longer valid).
+
+> [!TIP]
+> This method is idempotent; calling it repeatedly does not clear headers that have already been set. The [header](#header-1), [cookie](#cookie-1), and [trailer](#trailer-1) methods perform the same initialization internally, so calling it manually is usually unnecessary; it is only needed before reading or writing these three property arrays directly.
+
 ### isWritable
 
 Checks whether the `Swoole\Http\Response` object has been ended (`end`) or detached (`detach`).

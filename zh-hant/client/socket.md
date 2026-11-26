@@ -508,3 +508,35 @@ public static function import($stream): Swoole\Coroutine\Socket | false
 | `$stream` | PHP 的 resource 資源 | 必填 |
 
 **返回值**：操作成功返回 `Swoole\Coroutine\Socket` 對象，發送失敗返回 `false`。
+
+### export
+
+將 `Swoole\Coroutine\Socket` 導出爲 `PHP` 的 `stream` 資源。
+
+```php
+public function export(): resource|false
+```
+
+**返回值**：成功返回 `stream` 資源，失敗返回 `false`。`Socket` 已關閉、`dup` 失敗或創建 `stream` 失敗時返回 `false`。
+
+> [!NOTE]
+> Swoole 版本 >= `v6.3.0` 可用。底層通過 `dup()` 複製文件描述符後創建獨立的 `stream` 資源，`Socket` 對象本身不受影響，仍可繼續協程 `I/O`。兩個描述符相互獨立，需要各自關閉。
+
+**示例**
+
+```php
+<?php
+use Swoole\Coroutine\Socket;
+use function Swoole\Coroutine\run;
+
+run(function () {
+    $socket = new Socket(AF_INET, SOCK_STREAM, 0);
+    $socket->connect('127.0.0.1', 9501);
+    $socket->send("hello");
+
+    $stream = $socket->export();
+    var_dump(fread($stream, 5));
+    fclose($stream);
+    $socket->close();
+});
+```

@@ -302,6 +302,41 @@ while(true) {
 > [!IMPORTANT]
 > 此函数用于兼容 `Amp` 等框架。这类框架需要在内部自行控制 `Reactor` 的事件循环；若直接使用 `Swoole\Event::wait()`，`Swoole` 底层会一直持有控制权，无法交还给框架。
 
+### exit
+
+退出事件循环。清除全部定时器，并停止正在运行的事件循环，[wait](#wait) 会随之返回。
+
+```php
+public static function exit(): void
+```
+
+**示例**
+
+```php
+<?php
+use Swoole\Event;
+use Swoole\Timer;
+
+Timer::tick(1000, function () {
+    echo "hello\n";
+    Event::exit(); // 第一次触发后退出事件循环
+});
+
+Event::wait();
+echo "Finish\n";
+```
+
+### rshutdown
+
+请求关闭阶段的事件循环收尾函数，`Swoole` 会自动将其注册为 `PHP` 的 `shutdown` 函数，一般无需手动调用。
+
+```php
+public static function rshutdown(): void
+```
+
+> [!NOTE]
+> 在 `shutdown` 函数中依赖事件循环等待的行为已被标记为废弃（`Event::wait() in shutdown function is deprecated`），请尽量在脚本主体内完成事件循环。
+
 ### 回调函数签名
 
 `Swoole\Event::add()` 和 `Swoole\Event::set()` 的回调函数签名。
@@ -323,6 +358,24 @@ function(mixed $socket) {}
 |`SWOOLE_EVENT_READ`                     | 监听可读事件|
 |`SWOOLE_EVENT_WRITE`                    | 监听可写事件|
 |`SWOOLE_EVENT_READ \| SWOOLE_EVENT_WRITE` | 监听可读或可写事件|
+
+### 别名
+
+除面向对象风格的命名外，同时提供函数式风格的别名，参数完全一致。
+
+| 面向对象 | 函数式风格 |
+|:---|:---|
+| `Swoole\Event::add()` | `swoole_event_add()` |
+| `Swoole\Event::set()` | `swoole_event_set()` |
+| `Swoole\Event::isset()` | `swoole_event_isset()` |
+| `Swoole\Event::del()` | `swoole_event_del()` |
+| `Swoole\Event::write()` | `swoole_event_write()` |
+| `Swoole\Event::wait()` | `swoole_event_wait()` |
+| `Swoole\Event::defer()` | `swoole_event_defer()` |
+| `Swoole\Event::cycle()` | `swoole_event_cycle()` |
+| `Swoole\Event::dispatch()` | `swoole_event_dispatch()` |
+| `Swoole\Event::exit()` | `swoole_event_exit()` |
+| `Swoole\Event::rshutdown()` | `swoole_event_rshutdown()` |
 
 ### 事件优先级
 

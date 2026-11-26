@@ -348,6 +348,19 @@ $server->start();
 > - 如果客戶端設置了 `Accept-Encoding`，那麼服務端不能設置 `Content-Length` 響應，`Swoole` 檢測到這種情況會忽略 `Content-Length` 的值，並且拋出一個警告。
 > - 設置了 `Content-Length` 響應不能調用 [write](/zh-hant/server/class/response.html#write)，`Swoole` 檢測到這種情況會忽略 `Content-Length` 的值，並且拋出一個警告。
 
+### initHeader
+
+初始化 [header](#header)、[cookie](#cookie)、[trailer](#trailer) 三個屬性爲空數組。
+
+```php
+public function initHeader(): bool
+```
+
+**返回值**：初始化成功返回 `true`；響應已 [end](#end) 或 [detach](#detach)（上下文已失效）時返回 `false`。
+
+> [!TIP]
+> 此方法是冪等的，重複調用不會清空已設置的響應頭。[header](#header-1)、[cookie](#cookie-1)、[trailer](#trailer-1) 方法內部也會自動完成同樣的初始化，因此通常無需手動調用；僅在需要直接讀寫這三個屬性數組時纔需要提前調用。
+
 ### isWritable
 
 判斷 `Swoole\Http\Response` 對象是否已結束（`end`）或已分離（`detach`）。

@@ -100,6 +100,19 @@ public function getCallback(string $event_name): \Closure|string|null|array
 |:---|:---|:---|
 | `$event_name` | Event callback name | Required |
 
+### getSocket
+
+Exports the port's listening `socket` as a `\Socket` object of the `sockets` extension, for performing native `sockets` operations on the listening socket.
+
+```php
+public function getSocket(): \Socket|false
+```
+
+**Return value**: Returns a `\Socket` object on success, `false` on failure.
+
+> [!NOTE]
+> Requires `sockets` extension support to be enabled when compiling `Swoole` ([--enable-sockets](/en/start/install.html#special-and-debug-options)). Since `v6.1.2`, the file descriptor is duplicated with `dup()` before export, so closing the exported object does not affect `Swoole`'s own listening socket.
+
 ## Examples
 
 ```php

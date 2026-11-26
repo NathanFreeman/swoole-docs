@@ -73,6 +73,9 @@ run(function () {
 > [!NOTE]
 > Swoole `4.4.3+` 可用，底层会读取 `/etc/resolv.conf` 获取 `DNS` 服务器地址。`$type` 参数自 Swoole `4.7` 起可用，在此之前仅支持 `AF_INET`（`IPv4`）解析。
 
+> [!TIP]
+> 全局函数 `swoole_async_dns_lookup_coro()` 是该方法的别名，参数完全一致。
+
 ### exec
 
 执行一条 `shell` 命令，底层自动执行协程调度。

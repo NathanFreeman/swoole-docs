@@ -292,6 +292,40 @@ if (empty(Thread::getArguments())) {
 }
 ```
 
+### getResult
+
+獲取線程的返回值。
+
+```php
+public function getResult(): mixed
+```
+
+**返回值**：返回線程返回值反序列化後的全新副本；線程沒有返回值、拋出異常或提前 `exit` 時返回 `null`。
+
+> [!NOTE]
+> Swoole 版本 >= `v6.3.0` 可用，且僅在 `PHP >= 8.4` 時生效（`PHP 8.2`/`8.3` 始終返回 `null`）。
+
+> [!WARNING]
+> 線程未結束時調用會拋出 `Error`，必須先 [join](#join)。線程結束後可以反覆安全調用。與 [getExitStatus](#getexitstatus) 的區別：`getExitStatus` 返回退出狀態碼，用於區分線程成功與失敗；`getResult` 返回業務數據。
+
+**示例**
+
+```php
+<?php
+use Swoole\Thread;
+
+$args = Thread::getArguments();
+
+if (empty($args)) {
+    $thread = new Thread(__FILE__, 'child');
+    $thread->join();
+    var_dump($thread->getResult()); // string(5) "hello"
+} else {
+    // 子線程腳本的返回值會被序列化保存
+    return 'hello';
+}
+```
+
 ### isAlive
 
 檢查是否存活，無論線程是否執行了 `detach()` 或 `join()`，始終可以調用此函數。

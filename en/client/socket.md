@@ -508,3 +508,35 @@ public static function import($stream): Swoole\Coroutine\Socket | false
 | `$stream` | A PHP resource | Required |
 
 **Return value**: Returns a `Swoole\Coroutine\Socket` object on success; returns `false` on failure.
+
+### export
+
+Exports the `Swoole\Coroutine\Socket` as a `PHP` `stream` resource.
+
+```php
+public function export(): resource|false
+```
+
+**Return value**: Returns a `stream` resource on success, `false` on failure. Returns `false` when the `Socket` is already closed, `dup` fails, or creating the `stream` fails.
+
+> [!NOTE]
+> Available since Swoole `v6.3.0`. Under the hood, the file descriptor is duplicated with `dup()` and an independent `stream` resource is created; the `Socket` object itself is unaffected and can continue coroutine `I/O`. The two descriptors are independent and must each be closed separately.
+
+**Example**
+
+```php
+<?php
+use Swoole\Coroutine\Socket;
+use function Swoole\Coroutine\run;
+
+run(function () {
+    $socket = new Socket(AF_INET, SOCK_STREAM, 0);
+    $socket->connect('127.0.0.1', 9501);
+    $socket->send("hello");
+
+    $stream = $socket->export();
+    var_dump(fread($stream, 5));
+    fclose($stream);
+    $socket->close();
+});
+```

@@ -100,6 +100,19 @@ public function getCallback(string $event_name): \Closure|string|null|array
 |:---|:---|:---|
 | `$event_name` | 事件回調名 | 必填 |
 
+### getSocket
+
+將端口的監聽 `socket` 導出爲 `sockets` 擴展的 `\Socket` 對象，用於對監聽 `socket` 執行原生 `sockets` 操作。
+
+```php
+public function getSocket(): \Socket|false
+```
+
+**返回值**：成功返回 `\Socket` 對象，失敗返回 `false`。
+
+> [!NOTE]
+> 需要編譯 `Swoole` 時啓用 `sockets` 擴展支持（[--enable-sockets](/zh-hant/start/install.html#特殊與調試選項)）。自 `v6.1.2` 起底層通過 `dup()` 複製文件描述符後導出，關閉導出對象不會影響 `Swoole` 自身的監聽 `socket`。
+
 ## 示例
 
 ```php
