@@ -1,184 +1,174 @@
 # 进程/线程和工作模式
 
-- `Swoole` 异步服务器包含 `5` 种进程/线程角色：[`master`](#master)、[`manager`](#manager)、[`worker`](#worker)、[`task`](#task) 与 [`user`](#user)。
-- 与此同时，它支持三种运行模式：[`SWOOLE_PROCESS`](#swoole-process)、[`SWOOLE_BASE`](#swoole-base) 和 [`SWOOLE_THREAD`](#swoole-thread)，分别对应多线程+多进程、多进程，以及多线程的工作方式。`进程/线程` 与 `运行模式` 之间具有紧密的依赖关系。提前理解它们对于学习后续章节十分重要。
+- `Swoole` 异步服务器包含 [`master`](#master)、[`manager`](#manager)、[`worker`](#worker)、[`task`](#task)、[`user`](#user) 五种进程/线程角色，以及 `master` 进程内负责网络 `I/O` 的 `reactor` 线程。
+- 它支持三种运行模式：[`SWOOLE_PROCESS`](#swoole-process)、[`SWOOLE_BASE`](#swoole-base)、[`SWOOLE_THREAD`](#swoole-thread)，分别对应多线程+多进程、多进程、多线程。`进程/线程` 与 `运行模式` 紧密依赖，提前理解它们对学习后续章节十分重要。
 
 ## 进程/线程
 
-### 示例
+### 工厂类比
 
-- 为了更通俗地理解，我们可以把**异步服务器**比作一家**工厂**：
-    - **master（工厂厂长）**：负责工厂的整体稳定运行，制定规则、处理重大问题。销售前台直接向厂长汇报。
+把**异步服务器**比作一家**工厂**：
 
-    - **reactor（销售前台）**：负责接待客户、接单登记，但不参与实际生产。客户来了，销售先记录需求，再把订单往后传给工人，自己继续接待下一位。
+- **master（厂长）**：负责整体稳定运行，制定规则、处理重大问题；销售前台直接向厂长汇报。
+- **reactor（销售前台）**：接待客户、接单登记，不参与实际生产；记录需求后把订单传给工人，自己继续接待下一位。
+- **manager（副厂长）**：管理工人和行政事务；厂长不在时承担部分决策，确保运转不中断。
+- **worker（产线工人）**：核心生产，真正做出产品；小厂里也可能自己接单、自己生产（兼职销售）。
+- **task（行政/后勤）**：处理整理文件、回复邮件等非核心事务，让工人专心生产、不被频繁打断。
+- **user（设备监控）**：不参与核心业务，只记录和上报设备运行情况。
 
-    - **manager（工厂副厂长）**：管理工人和行政事务。当厂长不在时，副厂长能承担部分决策职责，确保工厂运转不中断。
+`SWOOLE_PROCESS` 模式下的角色关系：
 
-    - **worker（产线工人）**：负责核心生产，真正把客户要的产品做出来。做完后可以把成品交给销售去发货，但有时工人也要兼职销售（比如小厂里，工人自己接单、自己生产）。
-
-    - **task（行政/后勤）**：负责处理各种非核心事务，比如整理文件、回复邮件、协调资源。当工人忙着生产时，可以把这些杂事交给行政，让工人一心一意造产品，不用频繁被打断。
-
-    - **user（设备监控）**：不参与核心业务，只是记录和上报设备运行情况。
+```text
+客户端 ──TCP──> master 进程
+                  ├── reactor 线程 ×N   网络 I/O、协议解析（不执行 PHP）
+                  │        │ unixSocket
+                  │        ▼
+                  └── manager 进程      创建 / 监控 / 回收
+                           ├── worker 进程 ×N   业务逻辑（PHP）
+                           ├── task 进程 ×N     异步任务（PHP）
+                           └── user 进程 ×N     addProcess 自定义
+```
 
 ### master
 
-- **核心定位**：作为多线程的管理与通信中枢，`master` 进程负责创建并管理多个 `reactor` 线程。
+`master` 进程是多线程的管理与通信中枢，创建并管理多个 `reactor` 线程，并管理整个服务的生命周期。
 
-- **reactor 线程职责**：
-    - 每个 `reactor` 线程专注于维护客户端连接，处理网络 I/O、协议解析及数据收发。
-
-    - **数据流转**：通过 `unixSocket` 套接字将接收到的数据拼接为完整的数据包并转发给 `worker` 进程，同时将 `worker` 的处理结果返回给客户端。
-
-    - **注意**：`reactor` 线程仅负责网络层，**不执行任何 PHP 代码**。
-
-- **生命周期管理**：
-    - `master` 进程负责管理整个服务的生命周期。
-
-    - **SIGTERM**：向 `master` 进程发送该信号可停止服务。
-
-    - **SIGUSR1**：重启所有 `worker` 和 `task` 进程。
-
-    - **SIGUSR2**：仅重启 `task` 进程。
+- **reactor 线程**：维护客户端连接，处理网络 `I/O`、协议解析与数据收发；通过 `unixSocket` 把数据拼成完整数据包转发给 `worker`，再把 `worker` 的结果返回客户端。reactor 只负责网络层，**不执行任何 PHP 代码**。
+- **信号**：`SIGTERM` 停止服务；`SIGUSR1` 重启所有 `worker` 和 `task`；`SIGUSR2` 仅重启 `task`。
 
 > [!IMPORTANT]
-> **注意**：`master` 进程仅在 `SWOOLE_PROCESS` 模式下存在，其他运行模式中无此进程。
+> `master` 进程仅在 `SWOOLE_PROCESS` 模式下存在，其他模式无此进程。
 
 ### manager
 
-- **核心职责**：负责管理 `worker` 和 `task` 进程的生命周期，包括进程的创建、监控与回收。
+`manager` 进程管理 `worker` 和 `task` 进程的生命周期（创建、监控、回收）。
 
-- **信号处理**：
-    - **SIGUSR1**：向 `manager` 进程发送该信号，将重启所有 `worker` 和 `task` 进程。
-
-    - **SIGUSR2**：向 `manager` 进程发送该信号，将仅重启 `task` 进程。
-
-- **BASE 模式特性**：
-    - 在 `SWOOLE_BASE` 模式下，`manager` 进程接管整个服务的生命周期管理。
-
-    - **SIGTERM**：在此模式下，向 `manager` 进程发送该信号可停止服务。
+- **信号**：`SIGUSR1` 重启所有 `worker` 和 `task`；`SIGUSR2` 仅重启 `task`。
+- **BASE 模式**：`manager` 接管整个服务的生命周期，向 `manager` 发送 `SIGTERM` 即可停止服务。
 
 > [!IMPORTANT]
-> 如果是 `SWOOLE_THREAD` 工作模式，`manager` 进程会变成 `manager` 线程，其余不变。
+> `SWOOLE_THREAD` 模式下 `manager` 进程变为 `manager` 线程，其余不变。
 
 ### worker
 
-- **核心职责**：`worker` 进程专注于执行所有的业务逻辑代码。
+`worker` 进程执行所有业务逻辑代码。
 
-- **SWOOLE_PROCESS 模式**：
-    - **分工协作**：`worker` 进程与 `reactor` 线程分离。
-
-    - **工作流程**：`worker` 接收由 `reactor` 线程转发来的完整数据包，执行业务逻辑处理后，将结果返回给 `reactor` 线程，由后者发送给客户端。
-
-- **其他模式（如 SWOOLE_BASE）**：
-    - **全权负责**：`worker` 进程集网络 I/O 与业务逻辑于一身。
-
-    - **工作流程**：直接负责接收客户端数据、执行业务逻辑，并将处理结果返回给客户端。
+- **SWOOLE_PROCESS**：与 `reactor` 线程分离；接收 reactor 转发的完整数据包，处理后将结果交回 reactor 发送给客户端。
+- **其他模式（如 SWOOLE_BASE）**：集网络 `I/O` 与业务逻辑于一身，直接收发客户端数据并处理。
 
 > [!IMPORTANT]
-> 如果是 `SWOOLE_THREAD` 工作模式，`worker` 进程会变成 `worker` 线程，其余不变。
+> `SWOOLE_THREAD` 模式下 `worker` 进程变为 `worker` 线程，其余不变。
 
 ### task
 
-- **核心定位**：`task` 进程专为处理异步任务而生，它将任务投递、队列管理及 PHP 任务处理进程整合为一体，通过底层 API 即可轻松实现异步任务处理。
+`task` 进程专为异步任务设计，整合任务投递、队列管理与 PHP 任务处理，通过底层 API 即可实现异步任务。
 
-- **应用场景**：
-    - 在传统的 PHP-FPM 应用中，我们常需借助 Redis 等外部队列和后台脚本来异步处理耗时任务，以避免阻塞主进程并维持高并发能力。
-
-    - Swoole 的 `task` 进程正是为了解决这一痛点，它内置了异步任务处理能力，无需依赖外部组件即可实现高效的后台任务调度。
-
-- **结果反馈**：
-    - `task` 进程不仅负责执行任务，还支持在任务执行完毕后，将结果返回给 `worker` 进程，实现完整的数据闭环。
+- **应用场景**：传统 PHP-FPM 需借助 Redis 等外部队列 + 后台脚本异步处理耗时任务；`task` 内置异步任务能力，无需外部组件即可高效调度。
+- **结果反馈**：任务执行完毕后可将结果返回给 `worker`，形成完整数据闭环。
 
 > [!IMPORTANT]
-> 如果是 `SWOOLE_THREAD` 工作模式，`task` 进程会变成 `task` 线程，其余不变。
+> `SWOOLE_THREAD` 模式下 `task` 进程变为 `task` 线程，其余不变。
 
 ### user
 
-- **核心定位**：与其他内置进程不同，`user` 进程完全由用户自定义。它通常用于创建特殊的工作进程，以执行监控、状态上报或其他定制化任务。
+`user` 进程完全由用户自定义，通过 [Swoole\Server->addProcess()](/zh/server/methods.html#addprocess) 创建，常用于监控、状态上报等定制任务。
 
-- `user` 进程通过 [Swoole\Server->addProcess()](/zh/server/methods.html#addprocess) 创建生成。
-
-- **生命周期与稳定性**：
-    - `user` 进程的生存周期与 `master` 和 `manager` 进程保持一致，具有极高的稳定性。
-
-    - **重启免疫**：向 `master` 进程和 `manager` 进程发送 `SIGUSR1` 和 `SIGUSR2` 时，系统不会向用户进程发送任何信号，确保其持续运行。
-
-    - **停止处理**：在服务器关闭（shutdown）时，系统会向用户进程发送 `SIGTERM` 信号，以确保其被安全关闭。
-
-- **进程托管与守护**：
-    - `user` 进程由 `manager` 进程统一托管。不会触发 [workerStop](/zh/server/events.html#workerstop) 等事件。
-
-    - **异常恢复**：如果用户进程在运行时退出，`manager` 进程会自动检测到并重新创建一个新的进程，确保任务的高可用性。
+- **生命周期**：与 `master`/`manager` 一致，由 `manager` 统一托管，不触发 [workerStop](/zh/server/events.html#workerstop) 等事件。
+- **重启免疫**：向 `master`/`manager` 发送 `SIGUSR1`/`SIGUSR2` 不会波及 user 进程；服务器 shutdown 时向其发送 `SIGTERM` 安全关闭。
+- **异常恢复**：user 进程运行时退出，`manager` 会自动检测并重建新进程。
 
 ## 工作模式
 
+三种模式对比：
+
+| 维度 | `SWOOLE_PROCESS` | `SWOOLE_BASE` | `SWOOLE_THREAD` |
+|:---|:---|:---|:---|
+| 进程结构 | master + manager + worker/task/user 多进程 | manager（可选）+ worker 多进程 | 单进程，多线程 |
+| 网络 `I/O` 承担者 | master 内的 reactor 线程 | worker 进程 | worker 线程 |
+| 进程间通信 | 需要（`unixSocket`，两次 IPC） | 不需要 | 不需要（线程共享内存） |
+| 连接与 worker | 连接由 master 统一管理，与 worker 解耦 | 静态绑定到 worker | — |
+| worker 崩溃影响 | 已建立连接不断 | 该 worker 的连接全部断开 | 整个进程退出 |
+| 性能 | 有 IPC 开销 | 最佳（无 IPC） | 较 NTS 多进程约低 `10%` |
+| 典型场景 | 业务复杂、长连接需稳定 | 追求性能、无状态服务 | 任务并行 + 共享内存 |
+| 编译依赖 | 默认 | 默认 | PHP ZTS + `--enable-swoole-thread` |
+
 ### SWOOLE_PROCESS
 
-- `SWOOLE_PROCESS` 模式下，所有客户端连接均由 `master` 进程统一管理，内部实现较为复杂，涉及大量进程间通信（IPC）与进程管理机制。该模式适用于业务逻辑极其复杂的场景：`Swoole` 提供了完善的进程管理与内存保护机制，确保即便在复杂业务逻辑下也能长期稳定运行。
+所有客户端连接由 `master` 进程统一管理，内部涉及大量进程间通信（IPC）与进程管理，实现较复杂。适用于业务逻辑极其复杂的场景：完善的进程管理与内存保护机制确保长期稳定运行。`reactor` 线程还提供 `Buffer` 缓冲，应对大量慢速连接及逐字节发送数据的恶意客户端。
 
-- 此外，`Swoole` 在 `reactor` 线程中提供了 `Buffer` 缓冲功能，可有效应对大量慢速连接及逐字节发送数据的恶意客户端。
+```text
+客户端 ──TCP──> master 进程
+                  ├── reactor 线程 ×N   网络 I/O、协议解析（不执行 PHP）
+                  │        │ unixSocket
+                  │        ▼
+                  └── manager 进程      创建 / 监控 / 回收
+                           ├── worker 进程 ×N   业务逻辑（PHP）
+                           ├── task 进程 ×N     异步任务（PHP）
+                           └── user 进程 ×N     addProcess 自定义
+```
 
-**优点：**
+**优点**
 
-- 连接与数据请求处理分离，避免因部分连接数据量过大而导致 `worker` 进程负载不均。
+- 连接与数据请求处理分离，避免部分连接数据量过大导致 `worker` 负载不均。
+- `worker` 正常重启或致命错误退出时，已建立的连接不会被切断。
+- 支持单连接并发：维持少量 `TCP` 连接，请求即可在多个 `worker` 中并发处理。
 
-- `worker` 进程正常重启或者发生致命错误退出时，已建立的连接不会被切断。
+**缺点**
 
-- 支持单连接并发：只需维持少量 `TCP` 连接，请求即可在多个 `worker` 进程中并发处理。
-
-**缺点：**
-
-- 存在两次进程间通信开销：`master` 进程中的 `reactor` 线程与 `worker` 进程之间需通过 `unixSocket` 通信交换数据。
-
-- 设置 [dispatch_func](/zh/server/setting.html#dispatch-func) 自定义分发策略后，会强制 [reactor_num](/zh/server/setting.html#reactor-num) 为 `1`，无法使用多 `reactor` 线程并行处理网络事件。
+- 两次 IPC 开销：master 的 `reactor` 线程与 `worker` 之间需经 `unixSocket` 交换数据。
+- 设置 [dispatch_func](/zh/server/setting.html#dispatch-func) 自定义分发策略后，会强制 [reactor_num](/zh/server/setting.html#reactor-num) 为 `1`，无法多 reactor 线程并行处理网络事件。
 
 ### SWOOLE_BASE
 
-- 在 Swoole 的多种工作模式中，`SWOOLE_BASE` 通常被视为性能最优的选择。它采用了一种扁平化的架构设计，极大减少了进程间的交互开销。
+通常被视为性能最优的选择，采用扁平化架构，极大减少进程间交互开销。
 
-**优点：**
+```text
+客户端 ──TCP──> worker 进程 ×N        网络 I/O + 业务逻辑（PHP）
+                  ▲
+                  │ 创建 / 监控 / 回收
+               manager 进程（可选）
+```
 
-- `SWOOLE_BASE` 模式下不存在 `master` 进程的角色，仅保留 `manager` 进程（在某些极简场景下甚至都没有 `manager` 进程）。
+**优点**
 
-- 每个 `worker` 进程身兼数职，同时承担**客户端连接维护**、**数据收发**以及**业务逻辑处理**的所有工作。
+- 无 `master` 进程，仅保留 `manager`（极简场景下甚至没有 `manager`）。
+- 每个 `worker` 身兼数职：客户端连接维护、数据收发、业务逻辑处理一肩挑。
+- `manager` 可选：设置 [`worker_num=1`](/zh/server/setting.html#worker-num) 且未开启 `task` 或 [max_request](/zh/server/setting.html#max-request) 时，底层直接创建单个 `worker`，完全不创建 `manager`。
+- 去除 master 后数据无需 IPC 转发，消除通信瓶颈，性能最佳。
+- 代码逻辑直观简单，减少复杂的进程管理与调度，降低出错概率。
 
-- `manager` 进程在 `SWOOLE_BASE` 模式下是可选的。如果设置了 [`worker_num=1`](/zh/server/setting.html#worker-num) 且没有开启 `task` 进程或开启 [max_request](/zh/server/setting.html#max-request) 特性，底层将直接创建一个单独的 `worker` 进程，完全不创建 `manager` 进程。
+**缺点**
 
-- 由于去除了 `master` 进程，数据不再需要经过进程间通信（IPC）转发。这种直接处理机制消除了通信瓶颈，使得 `SWOOLE_BASE` 模式在性能上表现最佳。
-
-- 代码逻辑更加直观简单，减少了复杂的进程管理和调度环节，从而降低了出错的概率。
-
-**缺点：**
-
-- 客户端连接直接绑定在 `worker` 进程上。一旦某个 `worker` 进程因异常崩溃，该进程内维持的所有客户端连接将被强制关闭。
-
-- 客户端连接与 `worker` 进程是静态绑定的。对于少量的长连接客户端，无法利用到所有 `worker` 进程的资源。例如你有 `100` 个 `worker` 进程，但是只有 `80` 个连接，那么肯定有 `20` 个进程是空闲的。
-
-- 在长连接应用中，如果某些连接数据量大，其所在的 `worker` 负载会极高；而处理轻量连接的 `worker` 则处于空闲状态，导致不同 `worker` 进程间无法实现均衡。
-
-- 如果回调函数中存在阻塞操作，服务器将退化为同步模式。这会导致事件循环停滞，极易引发 `TCP backlog` 队列塞满，从而导致拒绝服务。
+- 连接直接绑定 `worker`：某个 `worker` 崩溃，其维持的所有连接被强制关闭。
+- 连接与 `worker` 静态绑定：少量长连接无法用满所有 `worker`。例如 `100` 个 `worker` 只有 `80` 个连接，必有 `20` 个进程空闲。
+- 长连接中数据量大的连接使其 `worker` 负载极高，轻量连接的 `worker` 却空闲，无法均衡。
+- 回调中存在阻塞操作时服务器退化为同步模式，事件循环停滞，极易塞满 `TCP backlog` 队列导致拒绝服务。
 
 ### SWOOLE_THREAD
 
-- `SWOOLE_THREAD` 是 `Swoole 6.0` 引入的全新运行模式，基于 `PHP` 的 `ZTS（Zend Thread Safety）` 能力，支持开启多线程服务。
+`Swoole 6.0` 引入的全新运行模式，基于 `PHP` 的 `ZTS（Zend Thread Safety）` 能力支持多线程服务。整个服务只有一个进程，`worker` 等全部变为线程处理客户端请求。
 
-- 在该模式下，整个服务只存在一个进程，`worker` 进程等全部都会变成线程用于处理客户端请求。
+```text
+┌─ 单一进程 ──────────────────────────┐
+│  manager 线程                       │
+│  worker 线程 ×N    网络 I/O + 业务  │
+│  task 线程 ×N      异步任务         │
+│  user 线程 ×N      自定义           │
+│  线程间共享内存，无需 IPC           │
+└─────────────────────────────────────┘
+```
 
-**优点：**
+**优点**
 
-- 线程间无需借助进程间通信（IPC），减少了额外开销。
+- 线程间无需 IPC，减少额外开销。
+- 单一进程结构使 `gdb -p` 调试更直观。
+- 既享协程高并发 `I/O` 编程便利，又能用多线程实现任务并行与共享内存堆栈。
 
-- 单一进程结构使 `gdb -p` 调试变得更加直观。
+**缺点**
 
-- 既能享受协程带来的高并发 I/O 编程便利，也能利用多线程实现任务并行与共享内存堆栈。
-
-**缺点：**
-
-- 一旦发生线程崩溃，整个进程会退出，需客户端实现错误重试、断线重连等容错机制，并配合 `Supervisor、Docker/K8s` 实现进程自动恢复。
-
-- `ZTS` 与 `锁` 操作会带来额外开销，性能较 `NTS` 多进程模式降低约 `10%`。无状态服务仍建议采用 `NTS` 多进程模型。
-
-- 不支持在线程之间传递对象或资源类型的数据。必须使用 `Swoole` 准备的并发安全容器。
+- 线程崩溃会导致整个进程退出，需客户端实现错误重试、断线重连等容错，并配合 `Supervisor、Docker/K8s` 自动恢复进程。
+- `ZTS` 与 `锁` 带来额外开销，性能较 `NTS` 多进程模式降低约 `10%`；无状态服务仍建议 `NTS` 多进程模型。
+- 不支持线程间传递对象或资源类型数据，必须使用 `Swoole` 的并发安全容器。
 
 > [!IMPORTANT]
-> `PHP` 必须是 `ZTS（Zend Thread Safety）` 模式，并且编译 `Swoole` 的时候需要加入 [`--enable-swoole-thread`](/zh/start/install.html#通用功能选项) 模式。
+> `PHP` 必须是 `ZTS（Zend Thread Safety）` 模式，并且编译 `Swoole` 时需加入 [`--enable-swoole-thread`](/zh/start/install.html#通用功能选项)。

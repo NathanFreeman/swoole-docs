@@ -1,14 +1,14 @@
 # 一鍵協程化
 
-雖然 `Swoole` 提供了協程這一強大特性，能夠使業務代碼保持同步寫法，又能提高併發能力。但由於 `PHP` 底層的 `I/O` 函數（例如 sleep，pdo_mysql）等默認都是**同步阻塞**的，一旦在協程中調用這些函數，整體的異步非阻塞能力就會被降級，導致協程退化爲同步阻塞模式。
+`PHP` 底層的 `I/O` 函數（如 `sleep`、`pdo_mysql`）默認是**同步阻塞**的，在協程中調用會讓協程退化爲同步阻塞，失去併發能力。
 
-針對這一問題，**Swoole 開發組**轉變了實現思路，**採用替換原生 PHP 函數**的方式來構建**協程 I/O** 能力。只需添加一行代碼，就能將原本**同步阻塞的 I/O** 操作自動轉換爲可被協程調度的**異步 I/O**，實現所謂的**一鍵協程化**。
+`Swoole` 通過**替換原生 PHP 函數**實現協程 `I/O`：只需一行代碼，就能把同步阻塞的 `I/O` 自動轉換爲可被協程調度的異步非阻塞 `I/O`，即**一鍵協程化**。
 
 ## 方法
 
 ### enableCoroutine
 
-一鍵將 `PHP` 原生的同步阻塞 `I/O` 函數自動轉換爲協程調度的異步非阻塞模式。
+將 `PHP` 原生的同步阻塞 `I/O` 函數自動轉換爲協程調度的異步非阻塞模式。
 
 ```php
 Swoole\Runtime::enableCoroutine(int $flags = SWOOLE_HOOK_ALL): bool
@@ -16,9 +16,9 @@ Swoole\Runtime::enableCoroutine(int $flags = SWOOLE_HOOK_ALL): bool
 
 | 參數 | 說明 | 默認值 |
 |:---|:---|:---|
-| `$flags` | 要對哪些類型的函數進行協程化，可以通過 `\|` 組合多種類型，例如 `SWOOLE_HOOK_TCP \| SWOOLE_HOOK_SLEEP` | `SWOOLE_HOOK_ALL` |
+| `$flags` | 要協程化的函數類型，可用 `\|` 組合，例如 `SWOOLE_HOOK_TCP \| SWOOLE_HOOK_SLEEP` | `SWOOLE_HOOK_ALL` |
 
-**返回值**：操作成功返回 `true`，操作失敗返回 `false`。
+**返回值**：成功返回 `true`，失敗返回 `false`。
 
 **示例**
 
@@ -27,19 +27,26 @@ Swoole\Runtime::enableCoroutine(int $flags = SWOOLE_HOOK_ALL): bool
 use Swoole\Runtime;
 use function Swoole\Coroutine\run;
 
-Runtime::enableCoroutine();
-run(function() {
-    $output = shell_exec('ls -al');
-    echo $output;
+Runtime::enableCoroutine(); // 默認 SWOOLE_HOOK_ALL
+run(function () {
+    go(function () {
+        sleep(1);
+        echo "協程 A 完成\n";
+    });
+    go(function () {
+        sleep(1);
+        echo "協程 B 完成\n";
+    });
 });
+// 兩個 sleep 併發執行，總耗時約 1 秒而非 2 秒
 ```
 
 > [!TIP]
-> 異步服務器可以通過 [hook_flags](/zh-hant/server/setting.html#hook-flags) 來一鍵將 `PHP` 原生的同步阻塞 `I/O` 函數自動轉換爲協程調度的異步非阻塞模式。功能和 `enableCoroutine` 完全一致。
+> 異步服務器可通過 [hook_flags](/zh-hant/server/setting.html#hook-flags) 一鍵協程化，功能與 `enableCoroutine` 完全一致。
 
 ### setHookFlags
 
-一鍵將 `PHP` 原生的同步阻塞 `I/O` 函數自動轉換爲協程調度的異步非阻塞模式。
+功能與 `enableCoroutine` 一致，用於設置當前運行時的協程化標誌位。
 
 ```php
 Swoole\Runtime::setHookFlags(int $flags): bool
@@ -47,9 +54,9 @@ Swoole\Runtime::setHookFlags(int $flags): bool
 
 | 參數 | 說明 | 默認值 |
 |:---|:---|:---|
-| `$flags` | 要對哪些類型的函數進行協程化，可以通過 `\|` 組合多種類型，例如 `SWOOLE_HOOK_TCP \| SWOOLE_HOOK_SLEEP` | 必填 |
+| `$flags` | 要協程化的函數類型，可用 `\|` 組合 | 必填 |
 
-**返回值**：操作成功返回 `true`，操作失敗返回 `false`。
+**返回值**：成功返回 `true`，失敗返回 `false`。
 
 **示例**
 
@@ -58,37 +65,68 @@ Swoole\Runtime::setHookFlags(int $flags): bool
 use Swoole\Runtime;
 use function Swoole\Coroutine\run;
 
-Runtime::setHookFlags(SWOOLE_HOOK_ALL);
-run(function() {
-    $output = shell_exec('ls -al');
-    echo $output;
+Runtime::setHookFlags(SWOOLE_HOOK_SLEEP | SWOOLE_HOOK_FILE);
+run(function () {
+    go(function () {
+        sleep(1);
+        echo file_get_contents(__FILE__);
+    });
 });
 ```
 
 ### getHookFlags
 
-獲取當前 PHP 運行時環境中，被協程化的函數類型。
+獲取當前運行時被協程化的函數類型。
 
 ```php
 Swoole\Runtime::getHookFlags(): int
 ```
 
-**返回值**：返回 `int` 類型的標誌位，即當前被協程化的函數類型。
+**返回值**：`int` 標誌位，即當前被協程化的函數類型。
 
 > [!WARNING]
-> 由於未協程化成功的標誌位會被清除，返回結果可能會與開啓協程化時傳入的參數不一致。
+> 未協程化成功的標誌位會被清除，返回結果可能與開啓時傳入的參數不一致。
 
 ## 支持的協程化選項
 
-下列選項都是 `$flags` 參數的取值，可通過 `|` 組合使用，例如 `SWOOLE_HOOK_TCP | SWOOLE_HOOK_SLEEP`。
+下列選項都是 `$flags` 的取值，可通過 `|` 組合，例如 `SWOOLE_HOOK_TCP | SWOOLE_HOOK_SLEEP`。
+
+| 標誌位 | 協程化對象 |
+|:---|:---|
+| `SWOOLE_HOOK_ALL` | 全部（自動排除未編譯的 `curl` 變體） |
+| `SWOOLE_HOOK_TCP` | `TCP` 流：`Redis`、`pdo_mysql`、`mysqli` 及 `stream` 系列函數 |
+| `SWOOLE_HOOK_UDP` | `UDP` 流 |
+| `SWOOLE_HOOK_UNIX` | `unix socket` 流 |
+| `SWOOLE_HOOK_UDG` | `unix dgram socket` 流 |
+| `SWOOLE_HOOK_SSL` | `ssl socket` 流 |
+| `SWOOLE_HOOK_TLS` | `tls socket` 流 |
+| `SWOOLE_HOOK_STREAM_FUNCTION` | [stream](https://www.php.net/manual/en/ref.stream.php) 系列函數（別名 `SWOOLE_HOOK_STREAM_SELECT`） |
+| `SWOOLE_HOOK_FILE` | 磁盤文件函數 `fopen`、`fread`、`file_get_contents` 等 |
+| `SWOOLE_HOOK_STDIO` | 標準輸入輸出（`STDIO`）操作 |
+| `SWOOLE_HOOK_SLEEP` | `sleep`、`usleep`、`time_nanosleep`、`time_sleep_until` |
+| `SWOOLE_HOOK_PROC` | [proc](https://www.php.net/manual/en/function.proc-open.php) 系列函數 |
+| `SWOOLE_HOOK_BLOCKING_FUNCTION` | `gethostbyname`、`exec`、`shell_exec` |
+| `SWOOLE_HOOK_CURL` | `curl` 擴展（早期兼容實現，建議用 `SWOOLE_HOOK_NATIVE_CURL`） |
+| `SWOOLE_HOOK_NATIVE_CURL` | `curl` 擴展（基於 `libcurl`，需 `--enable-swoole-curl`） |
+| `SWOOLE_HOOK_NET_FUNCTION` | `gethostbyname`、`gethostbynamel`、`mail`、`dns_check_record`、`checkdnsrr`、`dns_get_mx`、`getmxrr`、`dns_get_record`、`gethostbyaddr` |
+| `SWOOLE_HOOK_MONGODB` | `MongoDB` 客戶端（需 `swoole >= 6.2`、`enable_library=On`），詳見 [MongoDB](/zh-hant/coroutine/mongodb.html) |
+| `SWOOLE_HOOK_SOCKETS` | [sockets 擴展](https://www.php.net/manual/en/book.sockets.php) 系列函數 |
+| `SWOOLE_HOOK_PDO_PGSQL` | [pdo_pgsql](https://www.php.net/manual/en/ref.pdo-pgsql.php)（需編譯支持） |
+| `SWOOLE_HOOK_PDO_ODBC` | [pdo_odbc](https://www.php.net/manual/en/ref.pdo-odbc.php)（需編譯支持） |
+| `SWOOLE_HOOK_PDO_ORACLE` | [pdo_oci](https://www.php.net/manual/en/ref.pdo-oci.php)（需編譯支持） |
+| `SWOOLE_HOOK_PDO_SQLITE` | [pdo_sqlite](https://www.php.net/manual/en/ref.pdo-sqlite.php)（需編譯支持） |
+| `SWOOLE_HOOK_PDO_FIREBIRD` | [pdo_firebird](https://www.php.net/manual/en/ref.pdo-firebird.php)（需編譯支持） |
 
 ### SWOOLE_HOOK_ALL
 
-協程化全部 `PHP` 原生的同步阻塞 `I/O` 函數爲異步非阻塞。
+協程化全部 `PHP` 原生同步阻塞 `I/O` 函數。
+
+> [!NOTE]
+> `SWOOLE_HOOK_ALL` 會自動排除當前未編譯的 `curl` 變體：開啓 `--enable-swoole-curl` 時包含 `SWOOLE_HOOK_NATIVE_CURL`、排除 `SWOOLE_HOOK_CURL`，反之亦然。兩者互斥，不會同時生效。此外 `SWOOLE_HOOK_ALL` 不包含 `SWOOLE_HOOK_MONGODB`，需顯式按位或上去。
 
 ### SWOOLE_HOOK_TCP
 
-協程化 `TCP Socket` 類型的流（stream），包括 `Redis`，`pdo_mysql`，`mysqli` 等擴展和常用的 `php` 的 [stream](https://www.php.net/streams) 系列的函數，都可以被協程化。
+協程化 `TCP Socket` 類型的流（stream），包括 `Redis`、`pdo_mysql`、`mysqli` 等擴展和常用的 `php` [stream](https://www.php.net/streams) 系列函數。
 
 ### SWOOLE_HOOK_UNIX
 
@@ -227,7 +265,7 @@ run(function () {
 協程化 `sleep`、`usleep`、`time_nanosleep` 和 `time_sleep_until` 這些睡眠函數。
 
 > [!NOTE]
-> 由於底層的定時器最小粒度是 `1ms`，因此使用 `usleep` 等高精度睡眠函數時，如果設置爲低於 `1ms`，將直接使用 `usleep 系統調用`。可能會引起非常短暫的睡眠阻塞。
+> 底層定時器最小粒度是 `1ms`，使用 `usleep` 等高精度睡眠函數時若設置低於 `1ms`，將直接使用 `usleep 系統調用`，可能引起非常短暫的睡眠阻塞。
 
 **示例**
 
@@ -247,11 +285,12 @@ run(function () {
         echo '2' . PHP_EOL;
     });
 });
+// 先輸出 2，約 1 秒後輸出 1
 ```
 
 ### SWOOLE_HOOK_FILE
 
-協程化 `fopen`，`fread`，`file_get_contents` 等關於操作磁盤文件的 `PHP標準庫函數`。
+協程化 `fopen`、`fread`、`file_get_contents` 等操作磁盤文件的 `PHP標準庫函數`。
 
 **示例**
 
@@ -267,7 +306,7 @@ run(function () {
 ```
 
 > [!WARNING]
-> 由於協程化文件操作後，所有文件操作都會變成異步非阻塞的，包括 `autoload` 和 `include` 等操作，如果這些操作發生在協程調度點上，可能會引起不可預期的問題，這時可關閉文件協程化的選項。
+> 協程化文件操作後，所有文件操作都變成異步非阻塞，包括 `autoload` 和 `include`。若這些操作發生在協程調度點上，可能引起不可預期的問題，這時可關閉文件協程化選項。
 
 ```php
 <?php
@@ -276,9 +315,9 @@ Swoole\Runtime::enableCoroutine(SWOOLE_HOOK_ALL & ~SWOOLE_HOOK_FILE);
 ```
 
 > [!TIP]
-> 關閉文件協程化選項後，可以使用 [readFile](/zh-hant/coroutine/system_api.html#readfile) 和 [writeFile](/zh-hant/coroutine/system_api.html#writefile) 來實現文件異步讀寫。
+> 關閉文件協程化選項後，可使用 [readFile](/zh-hant/coroutine/system_api.html#readfile) 和 [writeFile](/zh-hant/coroutine/system_api.html#writefile) 實現文件異步讀寫。
 
-在 Swoole 6.1 之後的版本引入了 `async.file` 文件協議，通過讀寫 `async.file` 前綴的文件，可以在不指定 `SWOOLE_HOOK_FILE` 的情況下，直接協程化文件讀寫操作。
+Swoole `6.1` 之後引入了 `async.file` 文件協議，讀寫 `async.file` 前綴的文件可在不指定 `SWOOLE_HOOK_FILE` 的情況下直接協程化文件讀寫。
 
 ```php
 <?php
@@ -301,6 +340,9 @@ run(function () {
 ### SWOOLE_HOOK_STREAM_FUNCTION
 
 協程化 [stream](https://www.php.net/manual/en/ref.stream.php) 系列函數。
+
+> [!NOTE]
+> `SWOOLE_HOOK_STREAM_SELECT` 是 `SWOOLE_HOOK_STREAM_FUNCTION` 的向後兼容別名，兩者等價。
 
 **示例**
 
@@ -364,9 +406,9 @@ run(function () {
 });
 ```
 
-### SWOOLE_HOOK_CURL
+### SWOOLE_HOOK_BLOCKING_FUNCTION
 
-協程化 [curl 擴展](https://www.php.net/manual/en/book.curl.php) 系列函數。
+協程化 `gethostbyname`、`exec`、`shell_exec` 這幾個阻塞函數。
 
 **示例**
 
@@ -375,21 +417,24 @@ run(function () {
 use Swoole\Runtime;
 use function Swoole\Coroutine\run;
 
-Swoole\Runtime::enableCoroutine(SWOOLE_HOOK_CURL);
-
+Runtime::enableCoroutine(SWOOLE_HOOK_BLOCKING_FUNCTION);
 run(function () {
-    $ch = curl_init();  
-    curl_setopt($ch, CURLOPT_URL, "https://www.xinhuanet.com/");  
-    curl_setopt($ch, CURLOPT_HEADER, false);  
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    $result = curl_exec($ch);  
-    curl_close($ch);
-    var_dump($result);
+    go(function () {
+        echo shell_exec('sleep 1 && echo A');
+    });
+    go(function () {
+        echo shell_exec('sleep 1 && echo B');
+    });
 });
+// 兩條命令併發執行，總耗時約 1 秒
 ```
 
+### SWOOLE_HOOK_CURL
+
+協程化 [curl 擴展](https://www.php.net/manual/en/book.curl.php) 系列函數。
+
 > [!TIP]
-> `SWOOLE_HOOK_CURL` 不是基於 `libcurl` 實現對 `curl` 擴展的協程化，有些 `curl` 功能不支持，屬於早期的兼容產品，請使用 [`SWOOLE_HOOK_NATIVE_CURL`](#swoole-hook-native-curl) 代替它。
+> `SWOOLE_HOOK_CURL` 不是基於 `libcurl` 實現，有些 `curl` 功能不支持，屬於早期兼容產品，請使用 [`SWOOLE_HOOK_NATIVE_CURL`](#swoole-hook-native-curl) 代替它。示例見該節。
 
 ### SWOOLE_HOOK_NATIVE_CURL
 
@@ -405,103 +450,37 @@ use function Swoole\Coroutine\run;
 Swoole\Runtime::enableCoroutine(SWOOLE_HOOK_NATIVE_CURL);
 
 run(function () {
-    $ch = curl_init();  
-    curl_setopt($ch, CURLOPT_URL, "https://www.xinhuanet.com/");  
-    curl_setopt($ch, CURLOPT_HEADER, false);  
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, "https://www.xinhuanet.com/");
+    curl_setopt($ch, CURLOPT_HEADER, false);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    $result = curl_exec($ch);  
+    $result = curl_exec($ch);
     curl_close($ch);
     var_dump($result);
 });
 ```
 
 > [!TIP]
-> `SWOOLE_HOOK_NATIVE_CURL` 基於 `libcurl` 實現對 `curl` 擴展的協程化，支持全部的 `curl` 功能，優先級比 [`SWOOLE_HOOK_CURL`](#swoole-hook-curl) 高，而且和 `SWOOLE_HOOK_CURL` 爲互斥關係，不能同時開啓。
+> `SWOOLE_HOOK_NATIVE_CURL` 基於 `libcurl` 實現，支持全部 `curl` 功能，優先級比 [`SWOOLE_HOOK_CURL`](#swoole-hook-curl) 高，且兩者互斥，不能同時開啓。
 
 > [!IMPORTANT]
 > `SWOOLE_HOOK_NATIVE_CURL` 需要編譯 `swoole` 時開啓 `--enable-swoole-curl`，而且 `php` 和 `swoole` 必須使用相同版本的 `libcurl`。
 
 ### SWOOLE_HOOK_NET_FUNCTION
 
-協程化 `gethostbyname`，`gethostbynamel`，`mail`，`dns_check_record`，`checkdnsrr`，`dns_get_mx`，`getmxrr`，`dns_get_record` 和 `gethostbyaddr` 網絡請求相關的阻塞函數。
+協程化 `gethostbyname`、`gethostbynamel`、`mail`、`dns_check_record`、`checkdnsrr`、`dns_get_mx`、`getmxrr`、`dns_get_record` 和 `gethostbyaddr` 網絡請求相關的阻塞函數。
 
 ### SWOOLE_HOOK_MONGODB
 
 協程化 `MongoDB` 客戶端。
 
 > [!IMPORTANT]
-> `swoole 6.2` 以上版本可用，並且需要在 `php.ini` 配置文件設置 `swoole.enable_library=On` 纔可以使用。
-
-安裝擴展與依賴包：
-
-```shell
-# 先安裝mongodb擴展和mongodb/mongodb包
-pecl install mongodb
-composer require mongodb/mongodb
-```
-
-啓動 RemoteObject 服務端：
-
-```php
-<?php
-// 先啓動 RemoteObject 服務端
-use Swoole\RemoteObject\Server;
-
-require __DIR__ . '/vendor/autoload.php';
-$server = new Server(options: [
-    'worker_num' => 2,
-    'server_mode' => SWOOLE_THREAD, // 默認使用SWOOLE_THREAD模式運行服務，使用 ps aux 查看時只有一個進程，相比SWOOLE_BASE和SWOOLE_PROCESS更加優雅
-    'enable_coroutine' => false, // 連接池本身使用同步阻塞的mongodb擴展，是不需要協程環境的，因此需將enable_coroutine設置爲false
-    'bootstrap' => __FILE__,
-    'pid_file' => __DIR__ . '/server.pid'
-]);
-
-$server->start();
-```
-
-創建 RemoteObject 客戶端：
-
-```php
-<?php
-// 創建RemoteObject客戶端
-use Swoole\Runtime;
-use Swoole\RemoteObject\Client;
-use function Swoole\Coroutine\run;
-
-Swoole\Runtime::enableCoroutine(SWOOLE_HOOK_MONGODB);
-
-run(function () {
-    $client = new Client('127.0.0.1', 9567);  // 連接服務端
-    $mongo = $client->create(MongoDB\Client::class, 'mongodb://127.0.0.1:27017');
-    $collection = $mongo->myDatabase->users;
-    
-    // 插入單條數據
-    $result = $collection->insertOne([
-        'name' => '張三',
-        'email' => 'zhangsan@example.com',
-        'age' => 25,
-        'created_at' => $client->create(\MongoDB\BSON\UTCDateTime::class), // 部分數據字段是需要構造MongoDB數據對象，也必須使用$client->create()創建
-    ]);
-});
-```
+> `swoole 6.2` 以上版本可用，並且需要在 `php.ini` 配置文件設置 `swoole.enable_library=On` 才可以使用。`SWOOLE_HOOK_ALL` **不包含** `SWOOLE_HOOK_MONGODB`，必須顯式按位或上去。
 
 > [!WARNING]
 > 禁止協程之間共享由 `RemoteObject` 創建的對象，該對象不支持併發調用，僅可在一個協程內使用。當 `RemoteObject` 對象銷燬時，遠端服務器的對象也會同樣被銷燬。
 
-### 其他選項一覽
-
-以下選項同樣通過 `$flags` 傳入，說明見表格。
-
-| 名稱 | 說明 |
-|:---|:---|
-| `SWOOLE_HOOK_TLS` | 協程化 `tls socket` 類型的流（stream） |
-| `SWOOLE_HOOK_SOCKETS` | 協程化 [sockets 擴展](https://www.php.net/manual/en/book.sockets.php) 系列函數 |
-| `SWOOLE_HOOK_STDIO` | 將標準輸入輸出（STDIO）操作協程化 |
-| `SWOOLE_HOOK_PDO_PGSQL` | 協程化 [pdo_pgsql 擴展](https://www.php.net/manual/en/ref.pdo-pgsql.php) |
-| `SWOOLE_HOOK_PDO_ODBC` | 協程化 [pdo_odbc 擴展](https://www.php.net/manual/en/ref.pdo-odbc.php) |
-| `SWOOLE_HOOK_PDO_ORACLE` | 協程化 [pdo_oci 擴展](https://www.php.net/manual/en/ref.pdo-oci.php) |
-| `SWOOLE_HOOK_PDO_SQLITE` | 協程化 [pdo_sqlite 擴展](https://www.php.net/manual/en/ref.pdo-sqlite.php) |
-| `SWOOLE_HOOK_PDO_FIREBIRD` | 協程化 [pdo_firebird 擴展](https://www.php.net/manual/en/ref.pdo-firebird.php) |
+完整的安裝、服務端/客戶端示例與 `Swoole\MongoDB\Client`、`RemoteObject` 用法見 [MongoDB 協程化](/zh-hant/coroutine/mongodb.html)。
 
 ## 編譯期協程化：FTP 與 SSH2
 

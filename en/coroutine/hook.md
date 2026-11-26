@@ -1,14 +1,14 @@
 # Coroutine Hooks
 
-Although `Swoole` provides coroutines as a powerful feature that lets business code keep a synchronous style while improving concurrency, the underlying `PHP` `I/O` functions (such as sleep, pdo_mysql) are **synchronous blocking** by default. Once these functions are called inside a coroutine, the overall asynchronous non-blocking capability is degraded, and the coroutine falls back to synchronous blocking mode.
+The underlying `PHP` `I/O` functions (such as `sleep` and `pdo_mysql`) are **synchronous blocking** by default. Calling them inside a coroutine degrades it to synchronous blocking and loses concurrency.
 
-To solve this problem, the **Swoole development team** changed its implementation approach and built **coroutine I/O** capabilities by **replacing native PHP functions**. With just one line of code, originally **synchronous blocking I/O** operations are automatically converted into **asynchronous I/O** that can be scheduled by coroutines — the so-called **coroutine hooks** (one-click coroutineization).
+`Swoole` implements coroutine `I/O` by **replacing native PHP functions**: with just one line of code, synchronous blocking `I/O` is automatically converted into asynchronous non-blocking `I/O` that coroutines can schedule — the so-called **one-click coroutineization**.
 
 ## Methods
 
 ### enableCoroutine
 
-Automatically converts `PHP`'s native synchronous blocking `I/O` functions into asynchronous non-blocking mode scheduled by coroutines, in one step.
+Automatically converts `PHP`'s native synchronous blocking `I/O` functions into asynchronous non-blocking mode scheduled by coroutines.
 
 ```php
 Swoole\Runtime::enableCoroutine(int $flags = SWOOLE_HOOK_ALL): bool
@@ -16,9 +16,9 @@ Swoole\Runtime::enableCoroutine(int $flags = SWOOLE_HOOK_ALL): bool
 
 | Parameter | Description | Default |
 |:---|:---|:---|
-| `$flags` | Which types of functions to hook; multiple types can be combined with `\|`, for example `SWOOLE_HOOK_TCP \| SWOOLE_HOOK_SLEEP` | `SWOOLE_HOOK_ALL` |
+| `$flags` | Which types of functions to hook; combine with `\|`, e.g. `SWOOLE_HOOK_TCP \| SWOOLE_HOOK_SLEEP` | `SWOOLE_HOOK_ALL` |
 
-**Return value**: Returns `true` on success and `false` on failure.
+**Return value**: `true` on success, `false` on failure.
 
 **Example**
 
@@ -27,19 +27,26 @@ Swoole\Runtime::enableCoroutine(int $flags = SWOOLE_HOOK_ALL): bool
 use Swoole\Runtime;
 use function Swoole\Coroutine\run;
 
-Runtime::enableCoroutine();
-run(function() {
-    $output = shell_exec('ls -al');
-    echo $output;
+Runtime::enableCoroutine(); // defaults to SWOOLE_HOOK_ALL
+run(function () {
+    go(function () {
+        sleep(1);
+        echo "coroutine A done\n";
+    });
+    go(function () {
+        sleep(1);
+        echo "coroutine B done\n";
+    });
 });
+// The two sleeps run concurrently; total time is about 1 second instead of 2
 ```
 
 > [!TIP]
-> Async servers can use [hook_flags](/en/server/setting.html#hook-flags) to automatically convert `PHP`'s native synchronous blocking `I/O` functions into asynchronous non-blocking mode scheduled by coroutines in one step. The functionality is exactly the same as `enableCoroutine`.
+> Async servers can use [hook_flags](/en/server/setting.html#hook-flags) for one-click coroutineization; the functionality is exactly the same as `enableCoroutine`.
 
 ### setHookFlags
 
-Automatically converts `PHP`'s native synchronous blocking `I/O` functions into asynchronous non-blocking mode scheduled by coroutines, in one step.
+Equivalent to `enableCoroutine`; sets the hook flags of the current runtime.
 
 ```php
 Swoole\Runtime::setHookFlags(int $flags): bool
@@ -47,9 +54,9 @@ Swoole\Runtime::setHookFlags(int $flags): bool
 
 | Parameter | Description | Default |
 |:---|:---|:---|
-| `$flags` | Which types of functions to hook; multiple types can be combined with `\|`, for example `SWOOLE_HOOK_TCP \| SWOOLE_HOOK_SLEEP` | Required |
+| `$flags` | Which types of functions to hook; combine with `\|` | Required |
 
-**Return value**: Returns `true` on success and `false` on failure.
+**Return value**: `true` on success, `false` on failure.
 
 **Example**
 
@@ -58,37 +65,68 @@ Swoole\Runtime::setHookFlags(int $flags): bool
 use Swoole\Runtime;
 use function Swoole\Coroutine\run;
 
-Runtime::setHookFlags(SWOOLE_HOOK_ALL);
-run(function() {
-    $output = shell_exec('ls -al');
-    echo $output;
+Runtime::setHookFlags(SWOOLE_HOOK_SLEEP | SWOOLE_HOOK_FILE);
+run(function () {
+    go(function () {
+        sleep(1);
+        echo file_get_contents(__FILE__);
+    });
 });
 ```
 
 ### getHookFlags
 
-Gets the function types that are currently hooked in the PHP runtime environment.
+Gets the function types currently hooked in the runtime.
 
 ```php
 Swoole\Runtime::getHookFlags(): int
 ```
 
-**Return value**: Returns an `int` bitmask representing the function types that are currently hooked.
+**Return value**: an `int` bitmask of the function types currently hooked.
 
 > [!WARNING]
-> Since flags that fail to be hooked are cleared, the returned result may differ from the argument passed in when enabling hooks.
+> Flags that fail to be hooked are cleared, so the result may differ from the argument passed when enabling hooks.
 
 ## Supported Hook Options
 
-The following options are all values of the `$flags` parameter and can be combined with `|`, for example `SWOOLE_HOOK_TCP | SWOOLE_HOOK_SLEEP`.
+The following options are all values of `$flags` and can be combined with `|`, e.g. `SWOOLE_HOOK_TCP | SWOOLE_HOOK_SLEEP`.
+
+| Flag | What it hooks |
+|:---|:---|
+| `SWOOLE_HOOK_ALL` | Everything (automatically excludes the uncompiled `curl` variant) |
+| `SWOOLE_HOOK_TCP` | `TCP` streams: `Redis`, `pdo_mysql`, `mysqli`, and the `stream` family |
+| `SWOOLE_HOOK_UDP` | `UDP` streams |
+| `SWOOLE_HOOK_UNIX` | `unix socket` streams |
+| `SWOOLE_HOOK_UDG` | `unix dgram socket` streams |
+| `SWOOLE_HOOK_SSL` | `ssl socket` streams |
+| `SWOOLE_HOOK_TLS` | `tls socket` streams |
+| `SWOOLE_HOOK_STREAM_FUNCTION` | The [stream](https://www.php.net/manual/en/ref.stream.php) family (alias `SWOOLE_HOOK_STREAM_SELECT`) |
+| `SWOOLE_HOOK_FILE` | Disk file functions `fopen`, `fread`, `file_get_contents`, etc. |
+| `SWOOLE_HOOK_STDIO` | Standard input/output (`STDIO`) operations |
+| `SWOOLE_HOOK_SLEEP` | `sleep`, `usleep`, `time_nanosleep`, `time_sleep_until` |
+| `SWOOLE_HOOK_PROC` | The [proc](https://www.php.net/manual/en/function.proc-open.php) family |
+| `SWOOLE_HOOK_BLOCKING_FUNCTION` | `gethostbyname`, `exec`, `shell_exec` |
+| `SWOOLE_HOOK_CURL` | The `curl` extension (early compatibility implementation; prefer `SWOOLE_HOOK_NATIVE_CURL`) |
+| `SWOOLE_HOOK_NATIVE_CURL` | The `curl` extension (based on `libcurl`, requires `--enable-swoole-curl`) |
+| `SWOOLE_HOOK_NET_FUNCTION` | `gethostbyname`, `gethostbynamel`, `mail`, `dns_check_record`, `checkdnsrr`, `dns_get_mx`, `getmxrr`, `dns_get_record`, `gethostbyaddr` |
+| `SWOOLE_HOOK_MONGODB` | The `MongoDB` client (requires `swoole >= 6.2`, `enable_library=On`); see [MongoDB](/en/coroutine/mongodb.html) |
+| `SWOOLE_HOOK_SOCKETS` | The [sockets extension](https://www.php.net/manual/en/book.sockets.php) family |
+| `SWOOLE_HOOK_PDO_PGSQL` | [pdo_pgsql](https://www.php.net/manual/en/ref.pdo-pgsql.php) (requires compile support) |
+| `SWOOLE_HOOK_PDO_ODBC` | [pdo_odbc](https://www.php.net/manual/en/ref.pdo-odbc.php) (requires compile support) |
+| `SWOOLE_HOOK_PDO_ORACLE` | [pdo_oci](https://www.php.net/manual/en/ref.pdo-oci.php) (requires compile support) |
+| `SWOOLE_HOOK_PDO_SQLITE` | [pdo_sqlite](https://www.php.net/manual/en/ref.pdo-sqlite.php) (requires compile support) |
+| `SWOOLE_HOOK_PDO_FIREBIRD` | [pdo_firebird](https://www.php.net/manual/en/ref.pdo-firebird.php) (requires compile support) |
 
 ### SWOOLE_HOOK_ALL
 
-Hooks all of `PHP`'s native synchronous blocking `I/O` functions into asynchronous non-blocking mode.
+Hooks all of `PHP`'s native synchronous blocking `I/O` functions.
+
+> [!NOTE]
+> `SWOOLE_HOOK_ALL` automatically excludes the `curl` variant that is not compiled: with `--enable-swoole-curl` it includes `SWOOLE_HOOK_NATIVE_CURL` and excludes `SWOOLE_HOOK_CURL`, and vice versa. The two are mutually exclusive and never both active. `SWOOLE_HOOK_ALL` also does not include `SWOOLE_HOOK_MONGODB`; it must be OR-ed in explicitly.
 
 ### SWOOLE_HOOK_TCP
 
-Hooks `TCP Socket` streams, including extensions such as `Redis`, `pdo_mysql`, and `mysqli`, as well as the commonly used `php` [stream](https://www.php.net/streams) family of functions — all can be hooked.
+Hooks `TCP Socket` streams, including extensions such as `Redis`, `pdo_mysql`, and `mysqli`, as well as the commonly used `php` [stream](https://www.php.net/streams) family of functions.
 
 ### SWOOLE_HOOK_UNIX
 
@@ -227,7 +265,7 @@ run(function () {
 Hooks the sleep functions `sleep`, `usleep`, `time_nanosleep`, and `time_sleep_until`.
 
 > [!NOTE]
-> Because the underlying timer has a minimum granularity of `1ms`, when using high-precision sleep functions such as `usleep` with a duration below `1ms`, the `usleep system call` is used directly. This may cause a very brief sleep-induced block.
+> The underlying timer has a minimum granularity of `1ms`. When using high-precision sleep functions such as `usleep` with a duration below `1ms`, the `usleep system call` is used directly, which may cause a very brief sleep-induced block.
 
 **Example**
 
@@ -247,6 +285,7 @@ run(function () {
         echo '2' . PHP_EOL;
     });
 });
+// Prints 2 first, then 1 about one second later
 ```
 
 ### SWOOLE_HOOK_FILE
@@ -267,7 +306,7 @@ run(function () {
 ```
 
 > [!WARNING]
-> After hooking file operations, all file operations become asynchronous and non-blocking, including `autoload` and `include`. If these operations occur at a coroutine scheduling point, they may cause unexpected problems; in that case you can disable the file hook option.
+> After hooking file operations, all file operations become asynchronous and non-blocking, including `autoload` and `include`. If these occur at a coroutine scheduling point, they may cause unexpected problems; in that case you can disable the file hook option.
 
 ```php
 <?php
@@ -278,7 +317,7 @@ Swoole\Runtime::enableCoroutine(SWOOLE_HOOK_ALL & ~SWOOLE_HOOK_FILE);
 > [!TIP]
 > After disabling the file hook option, you can use [readFile](/en/coroutine/system_api.html#readfile) and [writeFile](/en/coroutine/system_api.html#writefile) for asynchronous file reads and writes.
 
-Versions after Swoole 6.1 introduce the `async.file` file protocol. By reading and writing files with the `async.file` prefix, file read/write operations can be hooked directly without specifying `SWOOLE_HOOK_FILE`.
+Versions after Swoole `6.1` introduce the `async.file` file protocol. Reading and writing files with the `async.file` prefix hooks file I/O directly without specifying `SWOOLE_HOOK_FILE`.
 
 ```php
 <?php
@@ -301,6 +340,9 @@ run(function () {
 ### SWOOLE_HOOK_STREAM_FUNCTION
 
 Hooks the [stream](https://www.php.net/manual/en/ref.stream.php) family of functions.
+
+> [!NOTE]
+> `SWOOLE_HOOK_STREAM_SELECT` is a backward-compatibility alias of `SWOOLE_HOOK_STREAM_FUNCTION`; the two are equivalent.
 
 **Example**
 
@@ -364,9 +406,9 @@ run(function () {
 });
 ```
 
-### SWOOLE_HOOK_CURL
+### SWOOLE_HOOK_BLOCKING_FUNCTION
 
-Hooks the [curl extension](https://www.php.net/manual/en/book.curl.php) family of functions.
+Hooks the blocking functions `gethostbyname`, `exec`, and `shell_exec`.
 
 **Example**
 
@@ -375,21 +417,24 @@ Hooks the [curl extension](https://www.php.net/manual/en/book.curl.php) family o
 use Swoole\Runtime;
 use function Swoole\Coroutine\run;
 
-Swoole\Runtime::enableCoroutine(SWOOLE_HOOK_CURL);
-
+Runtime::enableCoroutine(SWOOLE_HOOK_BLOCKING_FUNCTION);
 run(function () {
-    $ch = curl_init();  
-    curl_setopt($ch, CURLOPT_URL, "https://www.xinhuanet.com/");  
-    curl_setopt($ch, CURLOPT_HEADER, false);  
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    $result = curl_exec($ch);  
-    curl_close($ch);
-    var_dump($result);
+    go(function () {
+        echo shell_exec('sleep 1 && echo A');
+    });
+    go(function () {
+        echo shell_exec('sleep 1 && echo B');
+    });
 });
+// The two commands run concurrently; total time is about 1 second
 ```
 
+### SWOOLE_HOOK_CURL
+
+Hooks the [curl extension](https://www.php.net/manual/en/book.curl.php) family of functions.
+
 > [!TIP]
-> `SWOOLE_HOOK_CURL` does not hook the `curl` extension based on `libcurl`. Some `curl` features are unsupported; it is an early compatibility product. Use [`SWOOLE_HOOK_NATIVE_CURL`](#swoole-hook-native-curl) instead.
+> `SWOOLE_HOOK_CURL` is not based on `libcurl`; some `curl` features are unsupported. It is an early compatibility product — use [`SWOOLE_HOOK_NATIVE_CURL`](#swoole-hook-native-curl) instead. See that section for the example.
 
 ### SWOOLE_HOOK_NATIVE_CURL
 
@@ -405,18 +450,18 @@ use function Swoole\Coroutine\run;
 Swoole\Runtime::enableCoroutine(SWOOLE_HOOK_NATIVE_CURL);
 
 run(function () {
-    $ch = curl_init();  
-    curl_setopt($ch, CURLOPT_URL, "https://www.xinhuanet.com/");  
-    curl_setopt($ch, CURLOPT_HEADER, false);  
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, "https://www.xinhuanet.com/");
+    curl_setopt($ch, CURLOPT_HEADER, false);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    $result = curl_exec($ch);  
+    $result = curl_exec($ch);
     curl_close($ch);
     var_dump($result);
 });
 ```
 
 > [!TIP]
-> `SWOOLE_HOOK_NATIVE_CURL` hooks the `curl` extension based on `libcurl` and supports all `curl` features. It has higher priority than [`SWOOLE_HOOK_CURL`](#swoole-hook-curl) and is mutually exclusive with `SWOOLE_HOOK_CURL` — they cannot be enabled at the same time.
+> `SWOOLE_HOOK_NATIVE_CURL` is based on `libcurl` and supports all `curl` features. It has higher priority than [`SWOOLE_HOOK_CURL`](#swoole-hook-curl) and is mutually exclusive with it — they cannot be enabled at the same time.
 
 > [!IMPORTANT]
 > `SWOOLE_HOOK_NATIVE_CURL` requires `--enable-swoole-curl` when compiling `swoole`, and `php` and `swoole` must use the same version of `libcurl`.
@@ -430,78 +475,12 @@ Hooks the network-related blocking functions `gethostbyname`, `gethostbynamel`, 
 Hooks the `MongoDB` client.
 
 > [!IMPORTANT]
-> Available in `swoole 6.2` and later, and requires setting `swoole.enable_library=On` in the `php.ini` configuration file.
-
-Install the extension and dependency package:
-
-```shell
-# First install the mongodb extension and the mongodb/mongodb package
-pecl install mongodb
-composer require mongodb/mongodb
-```
-
-Start the RemoteObject server:
-
-```php
-<?php
-// Start the RemoteObject server first
-use Swoole\RemoteObject\Server;
-
-require __DIR__ . '/vendor/autoload.php';
-$server = new Server(options: [
-    'worker_num' => 2,
-    'server_mode' => SWOOLE_THREAD, // Runs the service in SWOOLE_THREAD mode by default; ps aux shows only one process, which is more elegant than SWOOLE_BASE and SWOOLE_PROCESS
-    'enable_coroutine' => false, // The connection pool itself uses the synchronous blocking mongodb extension and does not need a coroutine environment, so enable_coroutine must be set to false
-    'bootstrap' => __FILE__,
-    'pid_file' => __DIR__ . '/server.pid'
-]);
-
-$server->start();
-```
-
-Create the RemoteObject client:
-
-```php
-<?php
-// Create the RemoteObject client
-use Swoole\Runtime;
-use Swoole\RemoteObject\Client;
-use function Swoole\Coroutine\run;
-
-Swoole\Runtime::enableCoroutine(SWOOLE_HOOK_MONGODB);
-
-run(function () {
-    $client = new Client('127.0.0.1', 9567);  // Connect to the server
-    $mongo = $client->create(MongoDB\Client::class, 'mongodb://127.0.0.1:27017');
-    $collection = $mongo->myDatabase->users;
-    
-    // Insert a single document
-    $result = $collection->insertOne([
-        'name' => 'Zhang San',
-        'email' => 'zhangsan@example.com',
-        'age' => 25,
-        'created_at' => $client->create(\MongoDB\BSON\UTCDateTime::class), // Some data fields require constructing MongoDB data objects, which must also be created with $client->create()
-    ]);
-});
-```
+> Available in `swoole 6.2` and later, and requires setting `swoole.enable_library=On` in the `php.ini` configuration file. `SWOOLE_HOOK_ALL` **does not include** `SWOOLE_HOOK_MONGODB`; it must be OR-ed in explicitly.
 
 > [!WARNING]
 > Objects created by `RemoteObject` must not be shared between coroutines. Such objects do not support concurrent calls and can only be used within a single coroutine. When a `RemoteObject` object is destroyed, the object on the remote server is destroyed as well.
 
-### Other Options Overview
-
-The following options are also passed via `$flags`; see the table for descriptions.
-
-| Name | Description |
-|:---|:---|
-| `SWOOLE_HOOK_TLS` | Hooks `tls socket` streams |
-| `SWOOLE_HOOK_SOCKETS` | Hooks the [sockets extension](https://www.php.net/manual/en/book.sockets.php) family of functions |
-| `SWOOLE_HOOK_STDIO` | Hooks standard input/output (STDIO) operations |
-| `SWOOLE_HOOK_PDO_PGSQL` | Hooks the [pdo_pgsql extension](https://www.php.net/manual/en/ref.pdo-pgsql.php) |
-| `SWOOLE_HOOK_PDO_ODBC` | Hooks the [pdo_odbc extension](https://www.php.net/manual/en/ref.pdo-odbc.php) |
-| `SWOOLE_HOOK_PDO_ORACLE` | Hooks the [pdo_oci extension](https://www.php.net/manual/en/ref.pdo-oci.php) |
-| `SWOOLE_HOOK_PDO_SQLITE` | Hooks the [pdo_sqlite extension](https://www.php.net/manual/en/ref.pdo-sqlite.php) |
-| `SWOOLE_HOOK_PDO_FIREBIRD` | Hooks the [pdo_firebird extension](https://www.php.net/manual/en/ref.pdo-firebird.php) |
+For the full installation, server/client examples, and the usage of `Swoole\MongoDB\Client` and `RemoteObject`, see [MongoDB Coroutinization](/en/coroutine/mongodb.html).
 
 ## Compile-Time Coroutinization: FTP and SSH2
 
