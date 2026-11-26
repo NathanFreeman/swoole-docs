@@ -15,6 +15,39 @@ $server->on('receive', function (Server $server, int $fd, int $reactorId, string
 
 - This section introduces every event supported by the Swoole async server, one by one.
 
+## Event Overview
+
+The table below lists all events ordered by purpose; click an event name to jump to its details. "Process" is the process/thread in which the callback runs; "Coroutine" indicates whether the underlying layer automatically creates a coroutine to run the callback: `Yes` is controlled by [enable_coroutine](/en/server/setting.html#enable-coroutine), the `task` row is controlled by [task_enable_coroutine](/en/server/setting.html#task-enable-coroutine), and `No` means a coroutine is never created.
+
+| Event | Process | Coroutine |
+|:---|:---|:---|
+| [start](#start) | master | Yes |
+| [managerStart](#managerstart) | manager | No |
+| [managerStop](#managerstop) | manager | No |
+| [beforeReload](#beforereload) | manager | No |
+| [afterReload](#afterreload) | manager | No |
+| [workerError](#workererror) | manager | No |
+| [beforeShutdown](#beforeshutdown) | master/worker/task | Yes |
+| [shutdown](#shutdown) | master | No |
+| [workerStart](#workerstart) | worker/task | Yes |
+| [workerExit](#workerexit) | worker | No |
+| [workerStop](#workerstop) | worker/task | No |
+| [connect](#connect) | worker | Yes |
+| [receive](#receive) | worker | Yes |
+| [packet](#packet) | worker | Yes |
+| [close](#close) | worker | Yes |
+| [bufferFull](#bufferfull) | worker | No |
+| [bufferEmpty](#bufferempty) | worker | No |
+| [task](#task) | task | task_enable_coroutine |
+| [finish](#finish) | worker | Yes |
+| [pipeMessage](#pipemessage) | worker/task | Yes |
+| [request](#request) | worker | Yes |
+| [beforeHandshakeResponse](#beforehandshakeresponse) | worker | Yes |
+| [handshake](#handshake) | worker | Yes |
+| [open](#open) | worker | Yes |
+| [message](#message) | worker | Yes |
+| [disconnect](#disconnect) | worker | Yes |
+
 ## start
 
 - Fired in the [master process](/en/server/process_thread.html#processes-threads) after the server starts.
@@ -315,7 +348,7 @@ $server->on('workerStart', function ($server, $workerId) {
 
 ## workerExit
 
-- `workerExit` fires only when [reload_async](/en/server/setting.html#reload-async) is enabled, just before the process exits. See **How to Restart the Service Correctly**
+- `workerExit` fires only when [reload_async](/en/server/setting.html#reload-async) is enabled, just before the process exits.
 
 ```php
 function (Swoole\Server $server, int $workerId) {}
@@ -357,7 +390,7 @@ $server->start();
 > - If the process still has not exited after `max_wait_time` seconds, it is forcibly killed with the message `worker exit timeout, forced termination`.
 
 > [!TIP]
-> If [enable_coroutine](/en/server/setting.html#enable-coroutine) is `true`, the underlying layer creates a coroutine to execute the `workerExit` event.
+> The underlying layer does not create a coroutine to execute the `workerExit` event.
 
 ## workerStop
 
@@ -398,7 +431,7 @@ $server->start();
 
 ## workerError
 
-- This event fires when a [worker process](/en/server/process_thread.html#processes-threads) exits abnormally.
+- Fired in the [manager process](/en/server/process_thread.html#processes-threads) when a [worker process](/en/server/process_thread.html#processes-threads) exits abnormally.
 
 ```php
 function (Swoole\Server $server, int $workerId, int $pid, int $exitCode, int $signal) {}
@@ -781,10 +814,6 @@ $server = new Server('127.0.0.1', 9501, SWOOLE_PROCESS);
 $server->on('receive', function(Server $server, int $fd, int $reactorId, string $data) {
   echo $data . PHP_EOL;
 });
-
-$server->on('receive', function(Server $server, int $fd, int $reactorId, string $data) {
-  echo $data . PHP_EOL;
-});
 $server->start();
 ```
 
@@ -1142,6 +1171,77 @@ $server->start();
 
 > [!TIP]
 > If [enable_coroutine](/en/server/setting.html#enable-coroutine) is `true`, the underlying layer creates a coroutine to execute the `close` event.
+
+## bufferFull
+
+- Fired in the [worker process](/en/server/process_thread.html#processes-threads) when a connection's send buffer reaches the high watermark. It notifies your code to pause sending data to that connection, preventing the buffer from growing without bound.
+
+```php
+function (Swoole\Server $server, int $fd) {}
+```
+
+| Parameter | Description | Default |
+|:---|:---|:---|
+| `$server` | Swoole\Server object | Required |
+| `$fd` | File descriptor of the connection | Required |
+
+**Example**
+
+```php
+<?php
+use Swoole\Server;
+$server = new Server('127.0.0.1', 9501, SWOOLE_PROCESS);
+$server->set([
+    'buffer_high_watermark' => 8 * 1024 * 1024,
+    'buffer_low_watermark' => 1 * 1024 * 1024,
+]);
+$server->on('receive', function (Server $server, int $fd, int $reactorId, string $data) {
+    $server->send($fd, str_repeat('A', 1024 * 1024));
+});
+$server->on('bufferFull', function (Server $server, int $fd) {
+    echo "connection#{$fd} send buffer is full, pause sending\n";
+});
+$server->on('bufferEmpty', function (Server $server, int $fd) {
+    echo "connection#{$fd} send buffer is empty, resume sending\n";
+});
+$server->start();
+```
+
+> [!NOTE]
+> - Fires when the data in a connection's send buffer reaches [buffer_high_watermark](/en/server/setting.html#buffer-high-watermark); when unset, the default is `80%` of [socket_buffer_size](/en/server/setting.html#socket-buffer-size).
+> - After firing, the underlying layer marks the connection as being at the high watermark; the mark is cleared only when the buffer drops below [buffer_low_watermark](/en/server/setting.html#buffer-low-watermark) and [bufferEmpty](#bufferempty) fires.
+> - This is a port-level event; you can register it for a specific listening port via [Swoole\Server\Port](/en/server/class/port.html).
+
+> [!WARNING]
+> In `SWOOLE_PROCESS` mode, non-hash dispatch strategies (`SWOOLE_DISPATCH_ROUND`, `SWOOLE_DISPATCH_IDLE_WORKER`, `SWOOLE_DISPATCH_UIDMOD`, `SWOOLE_DISPATCH_CO_REQ_LB`, `SWOOLE_DISPATCH_CONCURRENT_LB`, etc.) disable `bufferFull`/`bufferEmpty` (as well as `connect`/`close`) and emit a warning, unless [enable_unsafe_event](/en/server/setting.html#enable-unsafe-event) is enabled. Hash dispatch strategies (`SWOOLE_DISPATCH_FDMOD`, `SWOOLE_DISPATCH_IPMOD`, `SWOOLE_DISPATCH_CO_CONN_LB`) are not subject to this restriction.
+
+> [!TIP]
+> The underlying layer does not create a coroutine to execute the `bufferFull` event.
+
+## bufferEmpty
+
+- Fired in the [worker process](/en/server/process_thread.html#processes-threads) when the data in a connection's send buffer drops below the low watermark. It notifies your code to resume sending data to that connection.
+
+```php
+function (Swoole\Server $server, int $fd) {}
+```
+
+| Parameter | Description | Default |
+|:---|:---|:---|
+| `$server` | Swoole\Server object | Required |
+| `$fd` | File descriptor of the connection | Required |
+
+**Example**
+
+See the [bufferFull](#bufferfull) example.
+
+> [!NOTE]
+> - Fires when the data in a connection's send buffer drops below [buffer_low_watermark](/en/server/setting.html#buffer-low-watermark), provided the connection had previously entered the high-watermark state.
+> - With [send_yield](/en/server/setting.html#send-yield) enabled, the underlying layer also resumes the send coroutines that were suspended because the buffer was full.
+> - Also a port-level event; the dispatch-mode restriction is the same as for [bufferFull](#bufferfull).
+
+> [!TIP]
+> The underlying layer does not create a coroutine to execute the `bufferEmpty` event.
 
 ## Event Differences
 

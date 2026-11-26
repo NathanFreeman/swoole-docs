@@ -15,6 +15,39 @@ $server->on('receive', function (Server $server, int $fd, int $reactorId, string
 
 - 本节逐一介绍 Swoole 异步服务器支持的全部事件。
 
+## 事件一览
+
+下表按用途排列全部事件，点击事件名跳转到详细说明。「触发进程」指回调在哪个进程/线程中执行；「协程」指底层是否自动创建协程来执行回调：`是` 受 [enable_coroutine](/zh/server/setting.html#enable-coroutine) 控制，`task` 行受 [task_enable_coroutine](/zh/server/setting.html#task-enable-coroutine) 控制，`否` 表示始终不创建协程。
+
+| 事件 | 触发进程 | 协程 |
+|:---|:---|:---|
+| [start](#start) | master | 是 |
+| [managerStart](#managerstart) | manager | 否 |
+| [managerStop](#managerstop) | manager | 否 |
+| [beforeReload](#beforereload) | manager | 否 |
+| [afterReload](#afterreload) | manager | 否 |
+| [workerError](#workererror) | manager | 否 |
+| [beforeShutdown](#beforeshutdown) | master/worker/task | 是 |
+| [shutdown](#shutdown) | master | 否 |
+| [workerStart](#workerstart) | worker/task | 是 |
+| [workerExit](#workerexit) | worker | 否 |
+| [workerStop](#workerstop) | worker/task | 否 |
+| [connect](#connect) | worker | 是 |
+| [receive](#receive) | worker | 是 |
+| [packet](#packet) | worker | 是 |
+| [close](#close) | worker | 是 |
+| [bufferFull](#bufferfull) | worker | 否 |
+| [bufferEmpty](#bufferempty) | worker | 否 |
+| [task](#task) | task | task_enable_coroutine |
+| [finish](#finish) | worker | 是 |
+| [pipeMessage](#pipemessage) | worker/task | 是 |
+| [request](#request) | worker | 是 |
+| [beforeHandshakeResponse](#beforehandshakeresponse) | worker | 是 |
+| [handshake](#handshake) | worker | 是 |
+| [open](#open) | worker | 是 |
+| [message](#message) | worker | 是 |
+| [disconnect](#disconnect) | worker | 是 |
+
 ## start
 
 - 服务器启动后，在 [master 进程](/zh/server/process_thread.html#进程-线程) 中触发。
@@ -315,7 +348,7 @@ $server->on('workerStart', function ($server, $workerId) {
 
 ## workerExit
 
-- 只有开启 [reload_async](/zh/server/setting.html#reload-async) 才会触发 `workerExit`，触发时机是进程退出前。参见 **如何正确的重启服务**
+- 只有开启 [reload_async](/zh/server/setting.html#reload-async) 才会触发 `workerExit`，触发时机是进程退出前。
 
 ```php
 function (Swoole\Server $server, int $workerId) {}
@@ -357,7 +390,7 @@ $server->start();
 > - 超过 `max_wait_time` 秒仍未退出，进程会被强制杀死，并提示 `worker exit timeout, forced termination`。
 
 > [!TIP]
-> 如果 [enable_coroutine](/zh/server/setting.html#enable-coroutine) 为 `true`，底层会创建协程来执行 `workerExit` 事件。
+> 底层不会创建协程来执行 `workerExit` 事件。
 
 ## workerStop
 
@@ -398,7 +431,7 @@ $server->start();
 
 ## workerError
 
-- 此事件在 [worker 进程](/zh/server/process_thread.html#进程-线程) 异常退出时触发。
+- [worker 进程](/zh/server/process_thread.html#进程-线程) 异常退出时，在 [manager 进程](/zh/server/process_thread.html#进程-线程) 中触发。
 
 ```php
 function (Swoole\Server $server, int $workerId, int $pid, int $exitCode, int $signal) {}
@@ -781,10 +814,6 @@ $server = new Server('127.0.0.1', 9501, SWOOLE_PROCESS);
 $server->on('receive', function(Server $server, int $fd, int $reactorId, string $data) {
   echo $data . PHP_EOL;
 });
-
-$server->on('receive', function(Server $server, int $fd, int $reactorId, string $data) {
-  echo $data . PHP_EOL;
-});
 $server->start();
 ```
 
@@ -1142,6 +1171,77 @@ $server->start();
 
 > [!TIP]
 > 如果 [enable_coroutine](/zh/server/setting.html#enable-coroutine) 为 `true`，底层会创建协程来执行 `close` 事件。
+
+## bufferFull
+
+- 连接的发送缓冲区达到高水位线时，在 [worker 进程](/zh/server/process_thread.html#进程-线程) 中触发，用于通知业务代码暂停向该连接发送数据，防止缓冲区无限膨胀。
+
+```php
+function (Swoole\Server $server, int $fd) {}
+```
+
+| 参数 | 说明 | 默认值 |
+|:---|:---|:---|
+| `$server` | Swoole\Server 对象 | 必填 |
+| `$fd` | 连接的文件描述符 | 必填 |
+
+**示例**
+
+```php
+<?php
+use Swoole\Server;
+$server = new Server('127.0.0.1', 9501, SWOOLE_PROCESS);
+$server->set([
+    'buffer_high_watermark' => 8 * 1024 * 1024,
+    'buffer_low_watermark' => 1 * 1024 * 1024,
+]);
+$server->on('receive', function (Server $server, int $fd, int $reactorId, string $data) {
+    $server->send($fd, str_repeat('A', 1024 * 1024));
+});
+$server->on('bufferFull', function (Server $server, int $fd) {
+    echo "connection#{$fd} 发送缓冲区已满，暂停发送\n";
+});
+$server->on('bufferEmpty', function (Server $server, int $fd) {
+    echo "connection#{$fd} 发送缓冲区已清空，恢复发送\n";
+});
+$server->start();
+```
+
+> [!NOTE]
+> - 当连接发送缓冲区的数据量达到 [buffer_high_watermark](/zh/server/setting.html#buffer-high-watermark) 时触发；未设置时默认取 [socket_buffer_size](/zh/server/setting.html#socket-buffer-size) 的 `80%`。
+> - 触发后底层将该连接标记为高水位状态，直到缓冲区数据量降到 [buffer_low_watermark](/zh/server/setting.html#buffer-low-watermark) 以下、触发 [bufferEmpty](#bufferempty) 才解除。
+> - 这是端口级事件，可通过 [Swoole\Server\Port](/zh/server/class/port.html) 为某个监听端口单独注册。
+
+> [!WARNING]
+> 在 `SWOOLE_PROCESS` 模式下，非哈希分发策略（`SWOOLE_DISPATCH_ROUND`、`SWOOLE_DISPATCH_IDLE_WORKER`、`SWOOLE_DISPATCH_UIDMOD`、`SWOOLE_DISPATCH_CO_REQ_LB`、`SWOOLE_DISPATCH_CONCURRENT_LB` 等）会屏蔽 `bufferFull`/`bufferEmpty`（以及 `connect`/`close`）并抛出警告，除非开启 [enable_unsafe_event](/zh/server/setting.html#enable-unsafe-event)。哈希分发策略（`SWOOLE_DISPATCH_FDMOD`、`SWOOLE_DISPATCH_IPMOD`、`SWOOLE_DISPATCH_CO_CONN_LB`）不受此限制。
+
+> [!TIP]
+> 底层不会创建协程来执行 `bufferFull` 事件。
+
+## bufferEmpty
+
+- 连接的发送缓冲区数据量降到低水位线以下时，在 [worker 进程](/zh/server/process_thread.html#进程-线程) 中触发，用于通知业务代码恢复向该连接发送数据。
+
+```php
+function (Swoole\Server $server, int $fd) {}
+```
+
+| 参数 | 说明 | 默认值 |
+|:---|:---|:---|
+| `$server` | Swoole\Server 对象 | 必填 |
+| `$fd` | 连接的文件描述符 | 必填 |
+
+**示例**
+
+见 [bufferFull](#bufferfull) 示例。
+
+> [!NOTE]
+> - 当连接发送缓冲区的数据量降到 [buffer_low_watermark](/zh/server/setting.html#buffer-low-watermark) 以下时触发，前提是该连接此前已进入高水位状态。
+> - 开启 [send_yield](/zh/server/setting.html#send-yield) 时，底层还会在此刻唤醒因缓冲区满而挂起的发送协程。
+> - 同为端口级事件，分发模式限制与 [bufferFull](#bufferfull) 一致。
+
+> [!TIP]
+> 底层不会创建协程来执行 `bufferEmpty` 事件。
 
 ## 事件区别
 
